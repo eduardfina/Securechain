@@ -1,0 +1,9 @@
+.idea
+artifacts
+cache
+node_modules
+coverage
+contracts/.deps
+contracts/artifacts
+coverage.json
+.env

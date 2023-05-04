@@ -1,0 +1,9 @@
+../.idea
+artifacts
+cache
+node_modules
+coverage
+Smart Contract/contracts/.deps
+Smart Contract/contracts/artifacts
+coverage.json
+.env
