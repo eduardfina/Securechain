@@ -3,6 +3,8 @@ pragma solidity 0.8.17;
 
 interface IControl {
 
+  function isActive() external view returns(bool);
+
   function getPermission(address) external view returns(bool);
 
   function getValidator() external view returns(address);

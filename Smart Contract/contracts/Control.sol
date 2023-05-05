@@ -75,6 +75,9 @@ contract Control is FunctionsClient, ConfirmedOwner, Context {
   // The address of the deployer Smart Contract.
   address private deployer;
 
+  // The limit time to check again the validator.
+  uint256 public activeTime;
+
   // Mapping from requestId to validation struct.
   mapping(bytes32 => Validation) public validationRequest;
   // Mapping from address to whether is a validator Smart Contract.
@@ -96,7 +99,7 @@ contract Control is FunctionsClient, ConfirmedOwner, Context {
   }
 
   // =============================================================
-  //                       MODIFIER FUNCTIONS
+  //                       CONTROL FUNCTIONS
   // =============================================================
 
   /**
@@ -105,6 +108,20 @@ contract Control is FunctionsClient, ConfirmedOwner, Context {
   modifier onlyValidator () {
     require(_msgSender() == validator, "Validator: sender is not the validator");
     _;
+  }
+
+  /**
+    * @dev Increase the active time, one month since the call.
+    */
+  function increaseActiveTime () public onlyOwner {
+    activeTime = block.timestamp + 2629800;
+  }
+
+  /**
+    * @dev Return if the control is active or not.
+    */
+  function isActive () public view returns (bool){
+    return activeTime > block.timestamp;
   }
 
   // =============================================================

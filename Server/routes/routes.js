@@ -1,6 +1,5 @@
 const express = require('express')
 
-const ApiController = require('../controllers/ApiController')
 const AuthController = require('../controllers/AuthController')
 const UserController = require("../controllers/UserController")
 const ContractController = require("../controllers/ContractsController");
@@ -19,6 +18,7 @@ module.exports = function (app) {
     api.post('/setAddress', AuthController.isLoggedIn, UserController.setAddress);
     api.post('/modifyInfo', AuthController.isLoggedIn, UserController.modifyInfo);
     api.post('/acceptValidation', AuthController.isLoggedIn, ValidationController.acceptValidation);
+    api.post('/closeValidation', AuthController.isOracleAuth, ValidationController.closeValidation);
 
     // Public Zone //
     api.get('/getProfileInfo', UserController.getProfileInfo);
@@ -26,11 +26,11 @@ module.exports = function (app) {
     api.get('/getUserAssets', ContractController.getUserAssets);
     api.post('/createContract', ContractController.createContract);
     api.get('/isValid', ValidationController.isValid);
-    api.post('/closeValidation', ValidationController.closeValidation);
     api.post('/estimateCostAcceptValidation', ValidationController.estimateCostAcceptValidation);
+    api.post('/generate', AuthController.generateOracleToken);
 
     // Error fallback //
-    api.get('*', ApiController.methodNotFound)
+    api.get('*', AuthController.methodNotFound)
 
     // Use router
     app.use('/', api)

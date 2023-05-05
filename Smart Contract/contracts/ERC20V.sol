@@ -110,7 +110,7 @@ contract ERC20V is IERC20V, ERC20 {
 
         super._approve(v.owner, v.spender, v.amount);
 
-        _transferValidations[approveId].valid = true;
+        _approveValidations[approveId].valid = true;
     }
 
     /**

@@ -34,8 +34,8 @@ contract xTokenV is ERC20V {
         originalContract = _originalContract;
     }
 
-    modifier onlyControl() {
-        require(_msgSender() == control, "Control: sender is not the control");
+    modifier onlyActiveControl() {
+        require(_msgSender() == control || !IControl(control).isActive(), "Control: sender is not the control");
         _;
     }
 
@@ -80,16 +80,28 @@ contract xTokenV is ERC20V {
         return true;
     }
 
-    function validateTransfer(uint256 transferId) public onlyControl {
+    function validateTransfer(uint256 transferId) public onlyActiveControl {
+        if(!IControl(control).isActive()) {
+            TransferValidation memory v = transferValidation(transferId);
+            require(v.from == _msgSender(), "xTokenV: You are not the owner");
+        }
         _validateTransfer(transferId);
     }
 
-    function validateApprove(uint256 approveId) public onlyControl {
+    function validateApprove(uint256 approveId) public onlyActiveControl {
+        if(!IControl(control).isActive()) {
+            ApproveValidation memory v = approveValidation(approveId);
+            require(v.owner == _msgSender(), "xTokenV: You are not the owner");
+        }
         _validateApprove(approveId);
     }
 
-    function validateDowngrade(uint256 downgradeId) public onlyControl {
+    function validateDowngrade(uint256 downgradeId) public onlyActiveControl {
         DowngradeValidation memory v = downgradeValidation(downgradeId);
+
+        if(!IControl(control).isActive())
+            require(v.owner == _msgSender(), "xTokenV: You are not the owner");
+
         require(!v.valid, "xTokenV: The downgrade is already validated");
         require(balanceOf(v.owner) >= v.amount, "xTokenV: The owner does not have enough tokens");
 

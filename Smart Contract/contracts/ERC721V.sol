@@ -120,7 +120,7 @@ contract ERC721V is IERC721V, ERC721 {
             super._setApprovalForAll(v.owner, v.approve, true);
         }
 
-        _transferValidations[approveId].valid = true;
+        _approveValidations[approveId].valid = true;
     }
 
     /**

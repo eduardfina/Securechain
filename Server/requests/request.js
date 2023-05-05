@@ -1,13 +1,15 @@
 // Define constants for the API endpoint and request parameters
-const API_ENDPOINT = "https://86ff-81-184-180-154.eu.ngrok.io"
+const API_ENDPOINT = "https://2f06-81-184-180-154.eu.ngrok.io"
 
 // Get the arguments from the request config
 const contractAddress = args[0] // e.g. "New York City"
 const process = args[1] // e.g. "Washington DC"
 const type = args[2]
+const apiKey = secrets.API_KEY;
 
 const headers = {
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${apiKey}`
 }
 
 // build HTTP request object

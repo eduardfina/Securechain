@@ -13,6 +13,10 @@ async function main() {
 
     console.log("Control address: ", control.address);
 
+    await control.increaseActiveTime();
+
+    console.log("Active control time increased, 1 month");
+
     const Deployer = await ethers.getContractFactory("Deployer");
     const dep = await Deployer.deploy(control.address);
 
@@ -41,13 +45,13 @@ async function main() {
 
     const fundTx = await linkToken.transferAndCall(
         networks["sepolia"]["functionsBillingRegistryProxy"],
-        ethers.utils.parseUnits("5"),
+        ethers.utils.parseUnits("10"),
         ethers.utils.defaultAbiCoder.encode(["uint64"], [subscriptionId])
     );
 
     console.log("Funding subscription, waiting 2 blocks...");
     await fundTx.wait(2);
-    console.log("Subscription " + subscriptionId + "funded with " + ethers.utils.formatEther("500000000000000000") + " LINK");
+    console.log("Subscription " + subscriptionId + "funded with " + ethers.utils.formatEther("10000000000000000000") + " LINK");
 
     const addTx = await registry.addConsumer(subscriptionId, control.address);
     console.log("Adding Consumer, waiting 2 blocks...");

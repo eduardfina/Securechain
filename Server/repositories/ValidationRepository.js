@@ -41,6 +41,11 @@ exports.getValidation = async function (address, process, type) {
     return validation;
 }
 
+exports.existsValidation = async function (address, process, type) {
+    const contract = await ContractRepository.getContract(address);
+    return Validations.exists({contract: contract._id, process: process, type: type});
+}
+
 exports.acceptValidation = async function (address, process, type) {
     let validation = await exports.getValidation(address, process, type);
     if(!validation.active) throw Error("Validation already closed!");
@@ -53,6 +58,9 @@ exports.acceptValidation = async function (address, process, type) {
 }
 
 exports.closeValidation = async function (address, process, type) {
+    if(type === "Approve" && !(await exports.existsValidation(address, process, type)))
+        type = "ApproveAll";
+
     let validation = await exports.getValidation(address, process, type);
     const contract = await ContractRepository.getContract(address);
 
@@ -73,16 +81,26 @@ exports.closeValidation = async function (address, process, type) {
 }
 
 exports.isValid = async function (address, process, type) {
+    if(type === "Approve" && !(await exports.existsValidation(address, process, type)))
+        type = "ApproveAll";
+
     const validation = await exports.getValidation(address, process, type);
     return validation.accept;
 }
 
 exports.isActive = async function (address, process, type) {
+    if(type === "Approve" && !(await exports.existsValidation(address, process, type)))
+        type = "ApproveAll";
+
     const validation = await exports.getValidation(address, process, type);
     return validation.active;
 }
 
 exports.validateEvent = async function (address, process, type) {
+    if(type === "Approve" && !(await exports.existsValidation(address, process, type)))
+        type = "ApproveAll";
+
+
     let validation = await exports.getValidation(address, process, type);
 
     validation.active = false;

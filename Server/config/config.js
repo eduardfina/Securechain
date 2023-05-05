@@ -37,7 +37,8 @@ const configuration = {
     },
     codeLocation: 0,
     codeLanguage: 0,
-    subscriptionId: 157
+    subscriptionId: 174,
+    oracleAuth: process.env.ORACLE_AUTH
 }
 // Export configuration
 module.exports = configuration

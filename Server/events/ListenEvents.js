@@ -9,7 +9,7 @@ const downgrade_hash = web3.utils.sha3('ValidateDowngrade(address,uint256,uint25
 const transfer_hash = web3.utils.sha3('ValidateTransfer(address,address,uint256,uint256)');
 const approveERC20_hash = web3.utils.sha3('ValidateApprove(address,address,uint256,uint256)');
 const approveERC721_hash = web3.utils.sha3('ValidateApprove(address,address,uint256,bool,uint256)');
-const validated_hash = web3.utils.sha3('Validated(address,uint256,bytes32)');
+const validated_hash = web3.utils.sha3('Validated(address,uint256,string)');
 
 
 var main = async function main() {
@@ -65,7 +65,7 @@ var main = async function main() {
             }
         });
 
-    var subscriptionApprove = web3.eth.subscribe('logs',{topics: [approveERC20_hash, approveERC721_hash]},(error, event) => {
+    var subscriptionApprove = web3.eth.subscribe('logs',{topics: [[approveERC20_hash, approveERC721_hash]]},(error, event) => {
     }).on("connected", function(subscriptionId){
         console.log('SubID: ',subscriptionId);
     })
@@ -76,7 +76,7 @@ var main = async function main() {
                 let type = "Approve";
 
                 if(contract.type === "ERC721") {
-                    if( web3.utils.toNumber(event.topics[2]) === "1" )
+                    if( web3.utils.toNumber(event.topics[2]) === 1 )
                         type = "ApproveAll";
                     const process = web3.utils.toNumber(event.topics[3]);
 
@@ -101,7 +101,12 @@ var main = async function main() {
         .on('data', async function(event){
             const contractAddress = normalizeAddress(event.topics[1]);
             const process = web3.utils.toNumber(event.topics[2]);
-            const type = web3.utils.toAscii(event.topics[3]);
+            let type = "Transfer";
+
+            if(event.topics[3] === "0x49744f73ac510aced35a20ef86473bc34529de321fe2acb1b906e8c1f98b059e")
+                type = "Approve"
+            if(event.topics[3] === "0x97f38ec4cb32b35d05ef2d091a1802da4380c577ff6c9294602b42512e0f6c2c")
+                type = "Downgrade";
 
             await ValidationRepository.validateEvent(contractAddress, process, type);
         });

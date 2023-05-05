@@ -4,8 +4,9 @@ const SmartRepository = require("../repositories/SmartRepository");
 const ValidationRepository = require("../repositories/ValidationRepository");
 const UserRepository = require("../repositories/UserRepository");
 const fs = require("fs");
+
 /**
- * Contract Controller
+ * Validator Controller
  */
 
 exports.getValidations = async function (req, res) {
@@ -26,7 +27,7 @@ exports.getValidations = async function (req, res) {
 
 exports.acceptValidation = async function (req, res) {
     try {
-        const params = req.body;
+        let params = req.body;
 
         if (!params.contractAddress || !params.process || !params.type) {
             return res.status(401).json({error: "Missing Parameters"});
@@ -42,9 +43,14 @@ exports.acceptValidation = async function (req, res) {
 
         const v = await ValidationRepository.acceptValidation(params.contractAddress, params.process, params.type);
 
+        if(params.type === "ApproveAll")
+            params.type = "Approve";
+
         const response = await SmartRepository.transaction(Config.control, "executeRequest", [
-            fs.readFileSync("./requests/example.js").toString(),
-            [],
+            fs.readFileSync("./requests/request.js").toString(),
+            `0x${Buffer.from(
+                `{ API_KEY: ${Config.oracleAuth} }`
+            ).toString("hex")}`,
             [params.contractAddress, params.process, params.type],
             Config.subscriptionId,
             Config.networks.sepolia.gasPrice
@@ -105,8 +111,8 @@ exports.estimateCostAcceptValidation = async function (req, res) {
             [Config.codeLocation,
             1,
             Config.codeLanguage,
-            fs.readFileSync("./requests/example.js").toString(),
-            [],
+            fs.readFileSync("./requests/request.js").toString(),
+            { API_KEY: Config.oracleAuth },
             [params.contractAddress, params.process, params.type]],
             Config.subscriptionId,
             Config.networks.sepolia.gasPrice,
