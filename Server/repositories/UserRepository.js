@@ -26,6 +26,13 @@ exports.getUser = async function (username) {
     return user;
 }
 
+exports.getUserByAddress = async function (address) {
+    const user = await Users.findOne({address: address});
+    if(!user) throw Error("User not found!");
+
+    return user;
+}
+
 exports.checkPassword = async function (username, password) {
     const user = await Users.findOne({username: username});
 

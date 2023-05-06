@@ -10,6 +10,7 @@ module.exports = function (config) {
     app.set('port', config.defaultPort)
 
     app.use(cors())
+    app.use(express.static('requests'))
 
     app.use(bodyParser.json())
     app.use(bodyParser.urlencoded({ extended: true }))

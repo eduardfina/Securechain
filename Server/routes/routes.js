@@ -4,6 +4,7 @@ const AuthController = require('../controllers/AuthController')
 const UserController = require("../controllers/UserController")
 const ContractController = require("../controllers/ContractsController");
 const ValidationController = require("../controllers/ValidationController");
+const PermissionController = require("../controllers/PermissionController");
 
 module.exports = function (app) {
     const api = express.Router()
@@ -19,6 +20,9 @@ module.exports = function (app) {
     api.post('/modifyInfo', AuthController.isLoggedIn, UserController.modifyInfo);
     api.post('/acceptValidation', AuthController.isLoggedIn, ValidationController.acceptValidation);
     api.post('/closeValidation', AuthController.isOracleAuth, ValidationController.closeValidation);
+    api.post('/denyPermission', AuthController.isLoggedIn, PermissionController.denyPermission);
+    api.post('/sendNFT', AuthController.isLoggedIn, PermissionController.sendNFT);
+    api.post('/sendToken', AuthController.isLoggedIn, PermissionController.sendToken);
 
     // Public Zone //
     api.get('/getProfileInfo', UserController.getProfileInfo);
@@ -28,6 +32,8 @@ module.exports = function (app) {
     api.get('/isValid', ValidationController.isValid);
     api.post('/estimateCostAcceptValidation', ValidationController.estimateCostAcceptValidation);
     api.post('/generate', AuthController.generateOracleToken);
+    api.get('/getPermission', PermissionController.getPermission);
+    api.get('/getTransactions', PermissionController.getTransactions);
 
     // Error fallback //
     api.get('*', AuthController.methodNotFound)

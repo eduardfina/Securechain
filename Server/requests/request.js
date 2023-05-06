@@ -1,5 +1,5 @@
 // Define constants for the API endpoint and request parameters
-const API_ENDPOINT = "https://2f06-81-184-180-154.eu.ngrok.io"
+const API_ENDPOINT = "https://2a4b-81-184-180-154.eu.ngrok.io"
 
 // Get the arguments from the request config
 const contractAddress = args[0] // e.g. "New York City"

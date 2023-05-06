@@ -17,7 +17,7 @@ exports.getValidations = async function (req, res) {
             return res.status(401).json({error: "Missing Parameters"});
         }
 
-        const validations = await ValidationRepository.getValidations(address);
+        const validations = await ValidationRepository.getValidations(params.address);
 
         return res.status(200).json({validations: validations});
     } catch (e) {
@@ -49,7 +49,7 @@ exports.acceptValidation = async function (req, res) {
         const response = await SmartRepository.transaction(Config.control, "executeRequest", [
             fs.readFileSync("./requests/request.js").toString(),
             `0x${Buffer.from(
-                `{ API_KEY: ${Config.oracleAuth} }`
+                `https://2a4b-81-184-180-154.eu.ngrok.io/secrets.json`
             ).toString("hex")}`,
             [params.contractAddress, params.process, params.type],
             Config.subscriptionId,

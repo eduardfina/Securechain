@@ -1,19 +1,21 @@
 const ContractRepository = require("../repositories/ContractRepository");
 const ValidationRepository = require("../repositories/ValidationRepository");
+const PermissionRepository = require("../repositories/PermissionRepository");
 
 var Web3 = require('web3');
 var web3 = new Web3('wss://solemn-long-dust.ethereum-sepolia.discover.quiknode.pro/' + process.env.QUICKNODE_API_KEY);
 
 const deploy_hash = web3.utils.sha3('Deploy(address,address,string)');
-const downgrade_hash = web3.utils.sha3('ValidateDowngrade(address,uint256,uint256)');
-const transfer_hash = web3.utils.sha3('ValidateTransfer(address,address,uint256,uint256)');
-const approveERC20_hash = web3.utils.sha3('ValidateApprove(address,address,uint256,uint256)');
-const approveERC721_hash = web3.utils.sha3('ValidateApprove(address,address,uint256,bool,uint256)');
+const validate_downgrade_hash = web3.utils.sha3('ValidateDowngrade(address,uint256,uint256)');
+const validate_transfer_hash = web3.utils.sha3('ValidateTransfer(address,address,uint256,uint256)');
+const validate_approveERC20_hash = web3.utils.sha3('ValidateApprove(address,address,uint256,uint256)');
+const validate_approveERC721_hash = web3.utils.sha3('ValidateApprove(address,address,uint256,bool,uint256)');
 const validated_hash = web3.utils.sha3('Validated(address,uint256,string)');
+const transfer_hash = web3.utils.sha3('Transfer(address,address,uint256)');
 
 
 var main = async function main() {
-    var subscriptionDeploy = web3.eth.subscribe('logs',{address: [process.env.CONTROL_ADDRESS], topics: [deploy_hash]},(error, event) => {
+    const subscriptionDeploy = web3.eth.subscribe('logs',{address: [process.env.CONTROL_ADDRESS], topics: [deploy_hash]},(error, event) => {
         }).on("connected", function(subscriptionId){
             console.log('SubID: ',subscriptionId);
         })
@@ -25,7 +27,7 @@ var main = async function main() {
             await ContractRepository.addContract(address, originalAddress, parameters[0]);
         });
 
-    var subscriptionDowngrade = web3.eth.subscribe('logs',{topics: [downgrade_hash]},(error, event) => {
+    const subscriptionDowngrade = web3.eth.subscribe('logs',{topics: [validate_downgrade_hash]},(error, event) => {
         }).on("connected", function(subscriptionId){
             console.log('SubID: ',subscriptionId);
         })
@@ -39,15 +41,15 @@ var main = async function main() {
             }
         });
 
-    var subscriptionTransfer = web3.eth.subscribe('logs',{topics: [transfer_hash]},(error, event) => {
-    }).on("connected", function(subscriptionId){
-        console.log('SubID: ',subscriptionId);
+    const subscriptionTransfer = web3.eth.subscribe('logs', {topics: [validate_transfer_hash]}, (error, event) => {
+    }).on("connected", function (subscriptionId) {
+        console.log('SubID: ', subscriptionId);
     })
-        .on('data', async function(event){
-            if(await ContractRepository.existsContract(event.address)) {
+        .on('data', async function (event) {
+            if (await ContractRepository.existsContract(event.address)) {
                 const address = normalizeAddress(event.topics[1]);
 
-                if(await ContractRepository.isNFTContract(event.address)) {
+                if (await ContractRepository.isNFTContract(event.address)) {
                     const token = web3.utils.toNumber(event.topics[2]);
                     const process = web3.utils.toNumber(event.topics[3]);
 
@@ -65,18 +67,18 @@ var main = async function main() {
             }
         });
 
-    var subscriptionApprove = web3.eth.subscribe('logs',{topics: [[approveERC20_hash, approveERC721_hash]]},(error, event) => {
-    }).on("connected", function(subscriptionId){
-        console.log('SubID: ',subscriptionId);
+    const subscriptionApprove = web3.eth.subscribe('logs', {topics: [[validate_approveERC20_hash, validate_approveERC721_hash]]}, (error, event) => {
+    }).on("connected", function (subscriptionId) {
+        console.log('SubID: ', subscriptionId);
     })
-        .on('data', async function(event){
-            if(await ContractRepository.existsContract(event.address)) {
+        .on('data', async function (event) {
+            if (await ContractRepository.existsContract(event.address)) {
                 const address = normalizeAddress(event.topics[1]);
                 const contract = await ContractRepository.getContract(event.address);
                 let type = "Approve";
 
-                if(contract.type === "ERC721") {
-                    if( web3.utils.toNumber(event.topics[2]) === 1 )
+                if (contract.type === "ERC721") {
+                    if (web3.utils.toNumber(event.topics[2]) === 1)
                         type = "ApproveAll";
                     const process = web3.utils.toNumber(event.topics[3]);
 
@@ -93,22 +95,35 @@ var main = async function main() {
                 }
             }
         });
-
-    var subscriptionValidated = web3.eth.subscribe('logs',{address: [process.env.CONTROL_ADDRESS], topics: [validated_hash]},(error, event) => {
-    }).on("connected", function(subscriptionId){
-        console.log('SubID: ',subscriptionId);
+    const subscriptionValidated = web3.eth.subscribe('logs', {
+        address: [process.env.CONTROL_ADDRESS],
+        topics: [validated_hash]
+    }, (error, event) => {
+    }).on("connected", function (subscriptionId) {
+        console.log('SubID: ', subscriptionId);
     })
-        .on('data', async function(event){
+        .on('data', async function (event) {
             const contractAddress = normalizeAddress(event.topics[1]);
             const process = web3.utils.toNumber(event.topics[2]);
             let type = "Transfer";
 
-            if(event.topics[3] === "0x49744f73ac510aced35a20ef86473bc34529de321fe2acb1b906e8c1f98b059e")
+            if (event.topics[3] === "0x49744f73ac510aced35a20ef86473bc34529de321fe2acb1b906e8c1f98b059e")
                 type = "Approve"
-            if(event.topics[3] === "0x97f38ec4cb32b35d05ef2d091a1802da4380c577ff6c9294602b42512e0f6c2c")
+            if (event.topics[3] === "0x97f38ec4cb32b35d05ef2d091a1802da4380c577ff6c9294602b42512e0f6c2c")
                 type = "Downgrade";
 
             await ValidationRepository.validateEvent(contractAddress, process, type);
+        });
+    const subscriptionPermissionTransactions = web3.eth.subscribe('logs', {
+        topics: [transfer_hash]
+    }, (error, event) => {
+    }).on("connected", function (subscriptionId) {
+        console.log('SubID: ', subscriptionId);
+    })
+        .on('data', async function (event) {
+            if (await PermissionRepository.existsTransaction(event.transactionHash)) {
+                await PermissionRepository.validateTransaction(event.transactionHash);
+            }
         });
 }
 
