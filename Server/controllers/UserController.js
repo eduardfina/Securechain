@@ -220,6 +220,17 @@ exports.existsAddress = async function (req, res) {
 
         return res.status(200).json({exists: exists});
     } catch (e) {
-        return res.status(500).json({error: e.message})
+        return res.status(500).json({error: e.message});
+    }
+}
+
+exports.getUserByAuth = async function (req, res) {
+    try {
+        const username = req.user.username;
+        const user = await UserRepository.getUser(username);
+
+        return res.status(200).json({username: user.username, name: user.name, lastName: user.lastName, address: user.address, email: user.email, balance: user.gasBalance});
+    } catch (e) {
+        return res.status(500).json({error: e.message});
     }
 }

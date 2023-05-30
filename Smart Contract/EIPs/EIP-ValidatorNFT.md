@@ -3,109 +3,126 @@ eip: NFT-Validator
 title: Validate NFT Transfer and Approve, an Extension of ERC-721
 description: A new validation step for transfer and approve calls, achieving a security step in case of stolen wallet.
 author: eduardfina (@eduardfina), Eduard López i Fina
-discussions-to: https://ethereum-magicians.org/t/guard-of-nft-sbt-an-extension-of-eip-721/12052
-status: Final
+discussions-to: https://ethereum-magicians.org/t/erc721-with-a-validation-step/14071
+status: Draft
 type: Standards Track
 category: ERC
-created: 2022-12-07
-requires: 165, 721
+created: 2023-05-07
+requires: 721
 ---
 
 ## Abstract
-
-This standard is an extension of [ERC-721](./eip-721.md). It separates the holding right and transfer right of non-fungible tokens (NFTs) and Soulbound Tokens (SBTs) and defines a new role, `guard` with `expires`. The flexibility of the `guard` setting enables the design of NFT anti-theft, NFT lending, NFT leasing, SBT, etc.
+This standard is an extension of [ERC-721](./eip-721.md). It defines a new validation functionality to avoid wallet draining, every `transfer` or `approve` will be locked waiting for validation.
 
 ## Motivation
 
-NFTs are assets that possess both use and financial value.
+The power of the Blockchain is at the same time its weakness, giving the user full responsibility for their data.
 
 Many cases of NFT theft currently exist, and current NFT anti-theft schemes, such as transferring NFTs to cold wallets, make NFTs inconvenient to be used.
 
-In current NFT lending, the NFT owner needs to transfer the NFT to the NFT lending contract, and the NFT owner no longer has the right to use the NFT while he has obtained the loan. In the real world, for example, if a person takes out a mortgage on his own house, he still has the right to use that house.
+Having a validation step before every `transfer` and `approve` would bring the Smart Contract developers the possibility to create a security NFT anti-theft schemes.
 
-For SBT, the current mainstream view is that an SBT is not transferable, which makes an SBT bound to an Ether address. However, when the private key of the user address is leaked or lost, retrieving SBT will become a complicated task and there is no corresponding standard. The SBTs essentially realizes the separation of NFT holding right and transfer right. When the wallet where SBT is located is stolen or unavailable, SBT should be able to be recoverable.
+When I was developing this standard I was thinking of a system where there would be a validator address that would be responsible for validating all Smart Contract transactions.
 
-In addition, SBTs still need to be managed in use. For example, if a university issues diploma-based SBTs to its graduates, and if the university later finds that a graduate has committed academic misconduct or jeopardized the reputation of the university, it should have the ability to retrieve the diploma-based SBTs.
+This address would be connected to a dApp where the user could see the validation requests of his NFTs and accept the correct ones.
+
+Giving this address only the power to validate transactions would make a much more secure system where to steal an NFT the thief would have to have both the user's address and the validator address simultaneously.
 
 ## Specification
 
 The keywords "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY" and "OPTIONAL" in this document are to be interpreted as described in RFC 2119.
 
-ERC-721 compliant contracts MAY implement this EIP.
+[ERC-721](./eip-721.md) compliant contracts MAY implement this EIP.
 
-A guard Must be valid only before expires.
+When `transfer` is called by the owner, the transfer MUST be frozen and a `TransferValidation` MUST be created.
 
-When a token has no guard or the guard is expired, `guardInfo` MUST return `(address(0), 0)`.
+When `approve` is called by the owner, the transfer MUST be frozen and an `ApproveValidation` MUST be created.
 
-When a token has no guard or the guard is expired, owner, authorised operators and approved address of the token MUST have permission to set guard and expires.
+When `setApprovalForAll` is called by the owner, the transfer MUST be frozen and an `ApproveValidation` MUST be created.
 
-When a token has a valid guard, owner, authorised operators and approved address of the token MUST NOT be able to change guard and expires, and they MUST NOT be able to transfer the token.
+When the transfer is called by an approved account and not the owner, it MUST be executed directly without the need for validation. This is in order to adapt to all current marketplaces that require approve to directly move your NFTs.
 
-When a token has a valid guard, `guardInfo` MUST return the address and expires of the guard.
-
-When a token has a valid guard, the guard MUST be able to remove guard and expires, change guard and expires, and transfer the token.
-
-When a token has a valid guard, if the token burns, the guard MUST be deleted.
-
-If issuing or minting SBTs, the guard MAY be uniformly set to the designated address to facilitate management.
+When validating a `TransferValidation` or `ApproveValidation` the valid field MUST be set to true and MUST NOT be validated again.
 
 ### Contract Interface
 
 ```solidity
- interface IERC6147 {
+ interface IERC721V {
 
-    /// Logged when the guard of an NFT is changed or expires is changed
-    /// @notice Emitted when the `guard` is changed or the `expires` is changed
-    ///         The zero address for `newGuard` indicates that there currently is no guard address
-    event UpdateGuardLog(uint256 indexed tokenId, address indexed newGuard, address oldGuard, uint64 expires);
-    
-    /// @notice Owner, authorised operators and approved address of the NFT can set guard and expires of the NFT and
-    ///         valid guard can modifiy guard and expires of the NFT
-    ///         If the NFT has a valid guard role, the owner, authorised operators and approved address of the NFT
-    ///         cannot modify guard and expires
-    /// @dev The `newGuard` can not be zero address
-    ///      The `expires` need to be valid
-    ///      Throws if `tokenId` is not valid NFT
-    /// @param tokenId The NFT to get the guard address for
-    /// @param newGuard The new guard address of the NFT
-    /// @param expires UNIX timestamp, the guard could manage the token before expires
-    function changeGuard(uint256 tokenId, address newGuard, uint64 expires) external;
+    struct TransferValidation {
+        // The address of the owner.
+        address from;
+        // The address of the receiver.
+        address to;
+        // The token Id.
+        uint256 tokenId;
+        // Whether is a valid transfer.
+        bool valid;
+    }
 
-    /// @notice Remove the guard and expires of the NFT
-    ///         Only guard can remove its own guard role and expires
-    /// @dev The guard address is set to 0 address
-    ///      The expires is set to 0
-    ///      Throws if `tokenId` is not valid NFT
-    /// @param tokenId The NFT to remove the guard and expires for
-    function removeGuard(uint256 tokenId) external;
-    
-    /// @notice Transfer the NFT and remove its guard and expires
-    /// @dev The NFT is transferred to `to` and the guard address is set to 0 address
-    ///      Throws if `tokenId` is not valid NFT
-    /// @param from The address of the previous owner of the NFT
-    /// @param to The address of NFT recipient 
-    /// @param tokenId The NFT to get transferred for
-    function transferAndRemove(address from, address to, uint256 tokenId) external;
+    struct ApproveValidation {
+        // The address of the owner.
+        address owner;
+        // The approved address.
+        address approve;
+        // The token Id.
+        uint256 tokenId;
+        // Wether is a total approvement.
+        bool approveAll;
+        // Whether is a valid approve.
+        bool valid;
+    }
 
-    /// @notice Get the guard address and expires of the NFT
-    /// @dev The zero address indicates that there is no guard
-    /// @param tokenId The NFT to get the guard address and expires for
-    /// @return The guard address and expires for the NFT
-   function guardInfo(uint256 tokenId) external view returns (address, uint64);   
+    /**
+     * @dev Emitted when a new transfer validation has been requested.
+     */
+    event ValidateTransfer(address indexed from, address to, uint256 indexed tokenId, uint256 indexed transferValidationId);
+
+    /**
+    * @dev Emitted when a new approve validation has been requested.
+    */
+    event ValidateApprove(address indexed owner, address approve, uint256 tokenId, bool indexed approveAll, uint256 indexed approveValidationId);
+
+    /**
+     * @dev Returns true if this contract is a validator ERC721.
+     */
+    function isValidatorContract() external view returns (bool);
+
+    /**
+     * @dev Returns the transfer validation struct using the transfer ID.
+     *
+     */
+    function transferValidation(uint256 transferId) external view returns (TransferValidation memory);
+
+    /**
+    * @dev Returns the approve validation struct using the approve ID.
+    *
+    */
+    function approveValidation(uint256 approveId) external view returns (ApproveValidation memory);
+
+    /**
+     * @dev Return the total amount of transfer validations created.
+     *
+     */
+    function totalTransferValidations() external view returns (uint256);
+
+    /**
+     * @dev Return the total amount of transfer validations created.
+     *
+     */
+    function totalApproveValidations() external view returns (uint256);
 }
   ```
 
-The `changeGuard(uint256 tokenId, address newGuard, uint64 expires)` function MAY be implemented as `public` or `external`.
+The `isValidatorContract()` function MUST be implemented as `public`.
 
-The `removeGuard(uint256 tokenId)` function MAY be implemented as `public` or `external`.
+The `transferValidation(uint256 transferId)` function MAY be implemented as `public` or `external`.
 
-The `transferAndRemove(address from,address to,uint256 tokenId)` function MAY be implemented as `public` or `external`.
+The `approveValidation(uint256 approveId)` function MAY be implemented as `public` or `external`.
 
-The `guardInfo(uint256 tokenId)` function MAY be implemented as `pure` or `view`.
+The `totalTransferValidations()` function MAY be implemented as `pure` or `view`.
 
-The `UpdateGuardLog` event MUST be emitted when a guard is changed.
-
-The `supportsInterface` method MUST return `true` when called with `0xb61d1057`.
+The `totalApproveValidations()` function MAY be implemented as `pure` or `view`.
 
 ## Rationale
 
@@ -131,187 +148,230 @@ Valid SBTs. Some SBTs have a period of use. More effective management can be ach
 
 ### Extensibility
 
-This standard only defines a `guard` and its `expires`. For complex functions needed by NFTs and SBTs, such as social recovery and multi-signature, the `guard` can be set as a third-party protocol address. Through the third-party protocol, more flexible and diverse functions can be achieved based on specific application scenarios.
-
-### Naming
-
-The alternative names are `guardian` and `guard`, both of which basically match the permissions corresponding to the role: protection of NFT or necessary management according to its application scenarios. The `guard` has fewer characters than the `guardian` and is more concise.
+This standard only defines the validation function, but does not define the system with which it has to be validated. A third-party protocol can define how it wants to call these functions as it wishes.
 
 ## Backwards Compatibility
 
-This standard can be fully ERC-721 compatible by adding an extension function set.
-
-If an NFT issued based on the above standard does not set a `guard`, then it is no different in the existing functions from the current NFT issued based on the ERC-721 standard.
+This standard is fully [ERC-721](./eip-721.md) compatible.
 
 ## Reference Implementation
 
 ```solidity
-
 // SPDX-License-Identifier: CC0-1.0
-pragma solidity ^0.8.8;
 
+pragma solidity ^0.8.0;
+
+import "./IERC721V.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "./IERC6147.sol";
 
-abstract contract ERC6147 is ERC721, IERC6147 {
+/**
+ * @dev Implementation of ERC721V
+ */
+contract ERC721V is IERC721V, ERC721 {
 
-    /// @dev A structure representing a token of guard address and expires
-    /// @param guard address of guard role
-    /// @param expirs UNIX timestamp, the guard could manage the token before expires
-    struct GuardInfo{
-        address guard;
-        uint64 expires;
-    }
-    
-    mapping(uint256 => GuardInfo) internal _guardInfo;
+    // Mapping from transfer ID to transfer validation
+    mapping(uint256 => TransferValidation) private _transferValidations;
 
-    /// @notice Owner, authorised operators and approved address of the NFT can set guard and expires of the NFT and
-    ///         valid guard can modifiy guard and expires of the NFT
-    ///         If the NFT has a valid guard role, the owner, authorised operators and approved address of the NFT
-    ///         cannot modify guard and expires
-    /// @dev The `newGuard` can not be zero address
-    ///      The `expires` need to be valid
-    ///      Throws if `tokenId` is not valid NFT
-    /// @param tokenId The NFT to get the guard address for
-    /// @param newGuard The new guard address of the NFT
-    /// @param expires UNIX timestamp, the guard could manage the token before expires
-    function changeGuard(uint256 tokenId, address newGuard, uint64 expires) public virtual{
-        require(expires > block.timestamp, "ERC6147: invalid expires");
-        _updateGuard(tokenId, newGuard, expires, false);
+    // Mapping from approve ID to approve validation
+    mapping(uint256 => ApproveValidation) private _approveValidations;
+
+    // Total number of transfer validations
+    uint256 private _totalTransferValidations;
+
+    // Total number of approve validations
+    uint256 private _totalApproveValidations;
+
+    /**
+     * @dev Initializes the contract by setting a `name` and a `symbol` to the token collection.
+     */
+    constructor(string memory name_, string memory symbol_) ERC721(name_, symbol_){
     }
 
-    /// @notice Remove the guard and expires of the NFT
-    ///         Only guard can remove its own guard role and expires
-    /// @dev The guard address is set to 0 address
-    ///      The expires is set to 0
-    ///      Throws if `tokenId` is not valid NFT
-    /// @param tokenId The NFT to remove the guard and expires for
-    function removeGuard(uint256 tokenId) public virtual  {
-        _updateGuard(tokenId, address(0), 0, true);
+    /**
+    * @dev Returns true if this contract is a validator ERC721.
+    */
+    function isValidatorContract() public pure returns (bool) {
+        return true;
     }
-    
-    /// @notice Transfer the NFT and remove its guard and expires
-    /// @dev The NFT is transferred to `to` and the guard address is set to 0 address
-    ///      Throws if `tokenId` is not valid NFT
-    /// @param from The address of the previous owner of the NFT
-    /// @param to The address of NFT recipient 
-    /// @param tokenId The NFT to get transferred for
-    function transferAndRemove(address from, address to, uint256 tokenId) public virtual {
-        safeTransferFrom(from, to, tokenId);
-        removeGuard(tokenId);
+
+    /**
+     * @dev Returns the transfer validation struct using the transfer ID.
+     *
+     */
+    function transferValidation(uint256 transferId) public view override returns (TransferValidation memory) {
+        require(transferId < _totalTransferValidations, "ERC721V: invalid transfer ID");
+        TransferValidation memory v = _transferValidation(transferId);
+
+        return v;
     }
-    
-    /// @notice Get the guard address and expires of the NFT
-    /// @dev The zero address indicates that there is no guard
-    /// @param tokenId The NFT to get the guard address and expires for
-    /// @return The guard address and expires for the NFT
-    function guardInfo(uint256 tokenId) public view virtual returns (address, uint64) {
-        if(_guardInfo[tokenId].expires >= block.timestamp){
-            return (_guardInfo[tokenId].guard, _guardInfo[tokenId].expires);
+
+    /**
+     * @dev Returns the approve validation struct using the approve ID.
+     *
+     */
+    function approveValidation(uint256 approveId) public view override returns (ApproveValidation memory) {
+        require(approveId < _totalApproveValidations, "ERC721V: invalid approve ID");
+        ApproveValidation memory v = _approveValidation(approveId);
+
+        return v;
+    }
+
+    /**
+     * @dev Return the total amount of transfer validations created.
+     *
+     */
+    function totalTransferValidations() public view override returns (uint256) {
+        return _totalTransferValidations;
+    }
+
+    /**
+     * @dev Return the total amount of approve validations created.
+     *
+     */
+    function totalApproveValidations() public view override returns (uint256) {
+        return _totalApproveValidations;
+    }
+
+    /**
+     * @dev Returns the transfer validation of the `transferId`. Does NOT revert if transfer doesn't exist
+     */
+    function _transferValidation(uint256 transferId) internal view virtual returns (TransferValidation memory) {
+        return _transferValidations[transferId];
+    }
+
+    /**
+     * @dev Returns the approve validation of the `approveId`. Does NOT revert if transfer doesn't exist
+     */
+    function _approveValidation(uint256 approveId) internal view virtual returns (ApproveValidation memory) {
+        return _approveValidations[approveId];
+    }
+
+    /**
+     * @dev Validate the transfer using the transfer ID.
+     *
+     */
+    function _validateTransfer(uint256 transferId) internal virtual {
+        TransferValidation memory v = transferValidation(transferId);
+        require(!v.valid, "ERC721V: the transfer is already validated");
+
+        address from = v.from;
+        address to = v.to;
+        uint256 tokenId = v.tokenId;
+
+        super._transfer(from, to, tokenId);
+
+        _transferValidations[transferId].valid = true;
+    }
+
+    /**
+     * @dev Validate the approve using the approve ID.
+     *
+     */
+    function _validateApprove(uint256 approveId) internal virtual {
+        ApproveValidation memory v = approveValidation(approveId);
+        require(!v.valid, "ERC721V: the approve is already validated");
+
+        if(!v.approveAll) {
+            require(v.owner == ownerOf(v.tokenId), "ERC721V: The token have a new owner");
+            super._approve(v.approve, v.tokenId);
         }
-        else{
-            return (address(0), 0);
+        else {
+            super._setApprovalForAll(v.owner, v.approve, true);
+        }
+
+        _approveValidations[approveId].valid = true;
+    }
+
+    /**
+     * @dev Create a transfer petition of `tokenId` from `from` to `to`.
+     *
+     * Requirements:
+     *
+     * - `to` cannot be the zero address.
+     * - `tokenId` token must be owned by `from`.
+     *
+     * Emits a {TransferValidate} event.
+     */
+    function _transfer(
+        address from,
+        address to,
+        uint256 tokenId
+    ) internal virtual override {
+        require(ERC721.ownerOf(tokenId) == from, "ERC721V: transfer from incorrect owner");
+        require(to != address(0), "ERC721V: transfer to the zero address");
+
+        if(_msgSender() == from) {
+            TransferValidation memory v;
+
+            v.from = from;
+            v.to = to;
+            v.tokenId = tokenId;
+
+            _transferValidations[_totalTransferValidations] = v;
+
+            emit ValidateTransfer(from, to, tokenId, _totalTransferValidations);
+
+            _totalTransferValidations++;
+        } else {
+            super._transfer(from, to, tokenId);
         }
     }
 
-    /// @notice Update the guard of the NFT
-    /// @dev Delete function: set guard to 0 address and set expires to 0; 
-    ///      and update function: set guard to new address and set expires
-    ///      Throws if `tokenId` is not valid NFT
-    /// @param tokenId The NFT to update the guard address for
-    /// @param newGuard The newGuard address
-    /// @param expires UNIX timestamp, the guard could manage the token before expires
-    /// @param allowNull Allow 0 address
-    function _updateGuard(uint256 tokenId, address newGuard, uint64 expires, bool allowNull) internal {
-        (address guard,) = guardInfo(tokenId);
-        if (!allowNull) {
-            require(newGuard != address(0), "ERC6147: new guard can not be null");
-        }
-        if (guard != address(0)) { 
-            require(guard == _msgSender(), "ERC6147: only guard can change it self"); 
-        } else { 
-            require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC6147: caller is not owner nor approved");
-        } 
+    /**
+     * @dev Create an approve petition from `to` to operate on `tokenId`
+     *
+     * Emits an {ValidateApprove} event.
+     */
+    function _approve(address to, uint256 tokenId) internal override virtual {
+        ApproveValidation memory v;
 
-        if (guard != address(0) || newGuard != address(0)) {
-            _guardInfo[tokenId] = GuardInfo(newGuard,expires);
-            emit UpdateGuardLog(tokenId, newGuard, guard, expires);
-        }
-    }
-    
-    /// @notice Check the guard address
-    /// @dev The zero address indicates there is no guard
-    /// @param tokenId The NFT to check the guard address for
-    /// @return The guard address
-    function _checkGuard(uint256 tokenId) internal view returns (address) {
-        (address guard, ) = guardInfo(tokenId);
-        address sender = _msgSender();
-        if (guard != address(0)) {
-            require(guard == sender, "ERC6147: sender is not guard of the token");
-            return guard;
-        }else{
-            return address(0);
-        }
-    }
- 
-    /// @dev Before transferring the NFT, need to check the gurard address
-    function transferFrom(address from, address to, uint256 tokenId) public virtual override {
-        address guard;
-        address new_from = from;
-        if (from != address(0)) {
-            guard = _checkGuard(tokenId);
-            new_from = ownerOf(tokenId);
-        }
-        if (guard == address(0)) {
-            require(
-                _isApprovedOrOwner(_msgSender(), tokenId),
-                "ERC721: transfer caller is not owner nor approved"
-            );
-        }
-        _transfer(new_from, to, tokenId);
+        v.owner = ownerOf(tokenId);
+        v.approve = to;
+        v.tokenId = tokenId;
+
+        _approveValidations[_totalApproveValidations] = v;
+
+        emit ValidateApprove(v.owner, to, tokenId, false, _totalApproveValidations);
+
+        _totalApproveValidations++;
     }
 
-    /// @dev Before safe transferring the NFT, need to check the gurard address
-    function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory _data) public virtual override {
-        address guard;
-        address new_from = from;
-        if (from != address(0)) {
-            guard = _checkGuard(tokenId);
-            new_from = ownerOf(tokenId);
-        }
-        if (guard == address(0)) {
-            require(
-                _isApprovedOrOwner(_msgSender(), tokenId),
-                "ERC721: transfer caller is not owner nor approved"
-            );
-        }
-        _safeTransfer(from, to, tokenId, _data);
-    }
+    /**
+     * @dev If approved is true create an approve petition from `operator` to operate on
+     * all of `owner` tokens, if not remove `operator` from operate on all of `owner` tokens
+     *
+     * Emits an {ValidateApprove} event.
+     */
+    function _setApprovalForAll(
+        address owner,
+        address operator,
+        bool approved
+    ) internal override virtual {
+        require(owner != operator, "ERC721V: approve to caller");
 
-    /// @dev When burning, delete `token_guard_map[tokenId]`
-    /// This is an internal function that does not check if the sender is authorized to operate on the token.
-    function _burn(uint256 tokenId) internal virtual override {
-        (address guard, )=guardInfo(tokenId);
-        super._burn(tokenId);
-        delete _guardInfo[tokenId];
-        emit UpdateGuardLog(tokenId, address(0), guard, 0);
-    }
+        if(approved) {
+            ApproveValidation memory v;
 
-    /// @dev See {IERC165-supportsInterface}.
-    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
-        return interfaceId == type(IERC6147).interfaceId || super.supportsInterface(interfaceId);
+            v.owner = owner;
+            v.approve = operator;
+            v.approveAll = true;
+
+            _approveValidations[_totalApproveValidations] = v;
+
+            emit ValidateApprove(v.owner, operator, 0, true, _totalApproveValidations);
+
+            _totalApproveValidations++;
+        }
+        else {
+            super._setApprovalForAll(owner, operator, approved);
+        }
     }
 }
-
 ```
 
 ## Security Considerations
 
-Make sure to set an appropriate `expires` for the `guard`, based on the specific application scenario.
-
-When an NFT has a valid guard, even if an address is authorized as an operator through `approve` or `setApprovalForAll`, the operator still has no right to transfer the NFT.
-
-When an NFT has a valid guard, the `owner` cannot sell the NFT. Some trading platforms list NFTs through `setApprovalForAll` and owners' signature. It is recommended to prevent listing these NFTs by checking `guardInfo`.
+The `_validateTransfer` and `_validateApprove` functions are created as internal, just as the [ERC-721](./eip-721.md) `mint` function, tries to create a secure system by which they can be called.
 
 ## Copyright
 

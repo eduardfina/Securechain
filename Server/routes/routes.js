@@ -15,6 +15,7 @@ module.exports = function (app) {
     api.post('/isLoggedIn', AuthController.isLoggedIn)
 
     // Private Zone //
+    api.get('/getUserByAuth', AuthController.isLoggedIn, UserController.getUserByAuth);
     api.post('/changePassword', AuthController.isLoggedIn, UserController.changePassword);
     api.post('/setAddress', AuthController.isLoggedIn, UserController.setAddress);
     api.post('/modifyInfo', AuthController.isLoggedIn, UserController.modifyInfo);
@@ -23,6 +24,7 @@ module.exports = function (app) {
     api.post('/denyPermission', AuthController.isLoggedIn, PermissionController.denyPermission);
     api.post('/sendNFT', AuthController.isLoggedIn, PermissionController.sendNFT);
     api.post('/sendToken', AuthController.isLoggedIn, PermissionController.sendToken);
+    api.get('/getMyAssets', AuthController.isLoggedIn, ContractController.getMyAssets);
 
     // Public Zone //
     api.get('/getProfileInfo', UserController.getProfileInfo);

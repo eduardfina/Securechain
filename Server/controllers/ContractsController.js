@@ -4,6 +4,7 @@ const SmartRepository = require("../repositories/SmartRepository");
 const ContractRepository = require('../repositories/ContractRepository');
 const DepositRepository = require("../repositories/DepositRepository");
 const BlockchainRepository = require("../repositories/BlockchainRepository");
+const UserRepository = require("../repositories/UserRepository");
 
 /**
  * Contract Controller
@@ -93,5 +94,31 @@ exports.getUserAssets = async function (req, res) {
         return res.status(200).json({assets: assets});
     } catch (e) {
         return res.status(500).json({error: e.message})
+    }
+}
+
+exports.getMyAssets = async function (req, res) {
+    try {
+        const user = await UserRepository.getUser(req.user.username);
+
+        const assets = await BlockchainRepository.getUserAssets(user.address);
+
+        for(let i in assets.nft) {
+            if (await ContractRepository.isValidatorContract(assets.nft[i].contract.address)) {
+                assets.nft[i]['validator'] = true;
+                assets.nft[i]['upgradable'] = false;
+            }
+            else if (await ContractRepository.existsOriginalContract(assets.nft[i].contract.address)) {
+                assets.nft[i]['validator'] = false;
+                assets.nft[i]['upgradable'] = true;
+            } else {
+                assets.nft[i]['validator'] = false;
+                assets.nft[i]['upgradable'] = false;
+            }
+        }
+
+        return res.status(200).json({assets: assets});
+    } catch (e) {
+        return res.status(500).json({error: e.message});
     }
 }

@@ -1,7 +1,7 @@
 const Web3 = require('web3')
 const Transfer = require('../models/transfer')
 const Config = require('../config/config.js')
-const web3 = new Web3(new Web3.providers.HttpProvider(Config.network.host))
+const web3 = new Web3(new Web3.providers.HttpProvider(Config.networks.sepolia.host))
 const account = web3.eth.accounts.privateKeyToAccount(Config.account.pk);
 web3.eth.accounts.wallet.add(account)
 
