@@ -36,6 +36,7 @@ module.exports = function (app) {
     api.get('/isValid', ValidationController.isValid);
     api.post('/estimateCostAcceptValidation', ValidationController.estimateCostAcceptValidation);
     api.post('/generate', AuthController.generateOracleToken);
+    api.get('/getContractFromOriginalAddress', ContractController.getContractFromOriginalAddress);
     api.get('/getPermission', PermissionController.getPermission);
     api.get('/getTransactions', PermissionController.getTransactions);
 

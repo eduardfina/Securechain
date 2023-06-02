@@ -30,8 +30,8 @@
           </q-card-section>
 
           <q-card-section class="q-pt-none">
-            <q-btn v-if="nft.upgradable" flat label="Upgrade NFT" style="margin-left: auto; margin-right: auto; background-color: limegreen; color: white; width: 100%; font-size: 70%" />
-            <q-btn v-if="nft.validator" flat label="Downgrade NFT" style="margin-left: auto; margin-right: auto; background-color: cornflowerblue; color: white; width: 100%; font-size: 70%" />
+            <q-btn @click="actualToken=nft; upgradeForm=true" v-if="nft.upgradable" flat label="Upgrade NFT" style="margin-left: auto; margin-right: auto; background-color: limegreen; color: white; width: 100%; font-size: 70%" />
+            <q-btn @click="actualToken=nft; downgradeForm=true" v-if="nft.validator" flat label="Downgrade NFT" style="margin-left: auto; margin-right: auto; background-color: cornflowerblue; color: white; width: 100%; font-size: 70%" />
             <q-btn @click="actualToken=nft; validateForm=true" v-if="!nft.validator && !nft.upgradable" flat label="Validate Contract" style="margin-left: auto; margin-right: auto; background-color: darkred; color: white; width: 100%; font-size: 70%" />
           </q-card-section>
         </q-card>
@@ -98,6 +98,40 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+    <q-dialog @close="etherscan = ''; loading = false;" v-model="upgradeForm" style="background-color: rgba(237, 231, 225, 0.3);">
+      <q-card style="background-color: black; color: white;">
+        <q-card-section>
+          <div class="text-h6">Upgrade {{actualToken.name}} ({{actualToken.symbol}})</div>
+        </q-card-section>
+
+        <q-card-section>
+          <q-img :src="actualToken.image"></q-img>
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn v-if="!etherscan" :loading="loading" @click="upgradeNFT(actualToken)" flat label="Upgrade NFT" style="margin-left: auto; margin-right: auto; background-color: limegreen; color: white" />
+          <q-btn v-if="etherscan" @click="openURL(etherscan)" flat label="See on Etherscan" style="margin-left: auto; margin-right: auto; background-color: dodgerblue; color: white" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+    <q-dialog @close="etherscan = ''; loading = false;" v-model="downgradeForm" style="background-color: rgba(237, 231, 225, 0.3);">
+      <q-card style="background-color: black; color: white;">
+        <q-card-section>
+          <div class="text-h6">Downgrade {{actualToken.name}} ({{actualToken.symbol}})</div>
+        </q-card-section>
+
+        <q-card-section>
+          <q-img :src="actualToken.image"></q-img>
+        </q-card-section>
+
+        <q-card-section>
+          <div class="text">Remember to validate the downgrade before the transaction.</div>
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn v-if="!etherscan" :loading="loading" @click="downgradeNFT(actualToken)" flat label="Downgrade NFT" style="margin-left: auto; margin-right: auto; background-color: cornflowerblue; color: white" />
+          <q-btn v-if="etherscan" @click="openURL(etherscan)" flat label="See on Etherscan" style="margin-left: auto; margin-right: auto; background-color: dodgerblue; color: white" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
     <q-dialog @close="etherscan = ''; loading = false;" v-model="validateForm" style="background-color: rgba(237, 231, 225, 0.3);">
       <q-card style="background-color: black; color: white;">
         <q-card-section>
@@ -118,6 +152,7 @@ import {openURL, useQuasar} from 'quasar';
 import ApiRepository from '../repositories/ApiRepository';
 import MenuComponent from '../components/MenuComponent.vue';
 import SmartRepository from '../repositories/SmartRepository';
+import Globals from '../config/globals';
 
 export default defineComponent({
   name: 'HomePage',
@@ -129,6 +164,8 @@ export default defineComponent({
   setup () {
     const $q = useQuasar();
     let tokenForm = ref(false);
+    let upgradeForm = ref(false);
+    let downgradeForm = ref(false);
     let validateForm = ref(false);
     let actualToken = ref({});
     let username = ref("");
@@ -158,6 +195,8 @@ export default defineComponent({
       username,
       password,
       tokenForm,
+      upgradeForm,
+      downgradeForm,
       validateForm,
       fullLoading,
       actualToken,
@@ -199,6 +238,33 @@ export default defineComponent({
         message: "Contract created",
         color: 'green'
       });
+    },
+    async upgradeNFT(NFT) {
+      this.loading = true;
+      let response = await ApiRepository.getContractFromOriginalAddress(localStorage.getItem('token'), NFT.contract.address);
+      const securedContract = response.data.contract.address;
+
+      response = await ApiRepository.getUserByAuth(localStorage.getItem('token'));
+      let userAddress = response.data.address;
+
+      const allowance = await SmartRepository.call({address: NFT.contract.address, abi: Globals.erc721abi}, 'isApprovedForAll', [userAddress, securedContract]);
+
+      if(!allowance) {
+        await SmartRepository.transaction({address: NFT.contract.address, abi: Globals.erc721abi}, 'setApprovalForAll', [securedContract, true]);
+      }
+
+      const res = await SmartRepository.transaction({address: securedContract, abi: Globals.nftVabi}, 'upgrade', [NFT.tokenId]);
+      this.etherscan = "https://sepolia.etherscan.io/tx/" + res.hash;
+
+      this.loading = false;
+    },
+    async downgradeNFT(NFT) {
+      this.loading = true;
+
+      const res = await SmartRepository.transaction({address: NFT.contract.address, abi: Globals.nftVabi}, 'downgrade', [NFT.tokenId]);
+      this.etherscan = "https://sepolia.etherscan.io/tx/" + res.hash;
+
+      this.loading = false;
     }
   },
 })

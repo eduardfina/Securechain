@@ -102,11 +102,16 @@ exports.getInfoNFT = async function getInfoNFT ({address, tokenId}) {
     if(tokenURI.includes("ipfs://"))
         tokenURI = ipfsToHttps(tokenURI);
 
-    const response = await fetch(tokenURI);
-    let json = await response.json();
+    let json = {};
+    try {
+        const response = await fetch(tokenURI);
+        let json = await response.json();
 
-    if(json.image.includes("ipfs://"))
-        json["image"] = ipfsToHttps(json.image);
+        if(json.image.includes("ipfs://"))
+            json["image"] = ipfsToHttps(json.image);
+    } catch (e) {
+        console.log(e);
+    }
 
     json["name"] = await SmartRepository.call({address: address, abi: Config.ERC721Abi}, "name", []);
     json["symbol"] = await SmartRepository.call({address: address, abi: Config.ERC721Abi}, "symbol", []);

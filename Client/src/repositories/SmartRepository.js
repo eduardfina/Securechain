@@ -45,7 +45,6 @@ export default {
   async transaction(contractData,functionName,args, value = 0){
     if(!provider)
       await this.connectMetamask();
-    console.log(provider);
 
     if(value > 0) {
       const overrides = {
@@ -54,6 +53,7 @@ export default {
       args.push(overrides)
     }
     let contract = new ethers.Contract(contractData.address, contractData.abi, signer);
+    console.log(contractData);
     let tx = await contract[functionName].apply(null, args);
     return await tx.wait();
   },

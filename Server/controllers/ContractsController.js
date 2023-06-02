@@ -34,7 +34,7 @@ exports.getContractFromOriginalAddress = async function (req, res) {
             return res.status(401).json({error: "Missing Parameters"});
         }
 
-        const contract = await ContractRepository.getContractFromOriginalAddress(originalAddress);
+        const contract = await ContractRepository.getContractFromOriginalAddress(params.originalAddress);
 
         return res.status(200).json({contract: contract});
     } catch (e) {

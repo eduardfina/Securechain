@@ -40,7 +40,10 @@ export default {
     return Repository.new().auth(authentication).post("/sendNFT", {toAddress, contractAddress, tokenId});
   },
   createContract (authentication, address) {
-    console.log(address);
     return Repository.new().auth(authentication).post("/createContract", {address});
+  },
+  getContractFromOriginalAddress(authentication, originalAddress) {
+    console.log(authentication);
+    return Repository.new().auth(authentication).get("/getContractFromOriginalAddress", {originalAddress});
   }
 };

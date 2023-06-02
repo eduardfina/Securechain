@@ -123,7 +123,6 @@ exports.closeValidation = async function (req, res) {
 
 exports.isValid = async function (req, res) {
     try {
-        console.log("isValid Call")
         const params = req.query;
 
         if (!params.contractAddress || !params.process || !params.type) {
