@@ -1,9 +1,10 @@
 const ContractRepository = require("../repositories/ContractRepository");
 const ValidationRepository = require("../repositories/ValidationRepository");
 const PermissionRepository = require("../repositories/PermissionRepository");
+const Config = require("../config/config");
 
 var Web3 = require('web3');
-var web3 = new Web3('wss://solemn-long-dust.ethereum-sepolia.discover.quiknode.pro/' + process.env.QUICKNODE_API_KEY);
+var web3 = new Web3(Config.networks.sepolia.wss);
 
 const deploy_hash = web3.utils.sha3('Deploy(address,address,string)');
 const validate_downgrade_hash = web3.utils.sha3('ValidateDowngrade(address,uint256,uint256)');

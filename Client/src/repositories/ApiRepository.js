@@ -17,5 +17,30 @@ export default {
   },
   getUserByAuth (authentication) {
     return Repository.new().auth(authentication).get("/getUserByAuth");
+  },
+  getMyAssets (authentication) {
+    return Repository.new().auth(authentication).get("/getMyAssets");
+  },
+  setAddress (authentication, address, message) {
+    return Repository.new().auth(authentication).post("/setAddress", {address, message});
+  },
+  getMyValidations (authentication) {
+    return Repository.new().auth(authentication).get("/getMyValidations");
+  },
+  getMySecuredAssets(authentication) {
+    return Repository.new().auth(authentication).get("/getMySecuredAssets");
+  },
+  getPermission(authentication, address) {
+    return Repository.new().auth(authentication).get("/getPermission", {address});
+  },
+  sendToken(authentication, toAddress, contractAddress, amount) {
+    return Repository.new().auth(authentication).post("/sendToken", {toAddress, contractAddress, amount});
+  },
+  sendNFT(authentication, toAddress, contractAddress, tokenId) {
+    return Repository.new().auth(authentication).post("/sendNFT", {toAddress, contractAddress, tokenId});
+  },
+  createContract (authentication, address) {
+    console.log(address);
+    return Repository.new().auth(authentication).post("/createContract", {address});
   }
 };

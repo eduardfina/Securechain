@@ -38,7 +38,7 @@ exports.sendTokens = async function (senderAddress, toAddress, contractAddress, 
     if(contract.type !== "ERC20")
         throw Error("The contract is not a validator Token");
 
-    if(token !== (await SmartRepository.call({address: contractAddress, abi: Config.xTokenVContractAbi}, "balanceOf", [senderAddress])))
+    if(Number(token) > Number(await SmartRepository.call({address: contractAddress, abi: Config.xTokenVContractAbi}, "balanceOf", [senderAddress])))
         throw Error("The sender doesn't have enough balance");
 
     const transaction = await SmartRepository.transaction({address: contractAddress, abi: Config.xTokenVContractAbi}, "transferFrom", [senderAddress, toAddress, token]);

@@ -19,12 +19,14 @@ module.exports = function (app) {
     api.post('/changePassword', AuthController.isLoggedIn, UserController.changePassword);
     api.post('/setAddress', AuthController.isLoggedIn, UserController.setAddress);
     api.post('/modifyInfo', AuthController.isLoggedIn, UserController.modifyInfo);
+    api.get('/getMyValidations', AuthController.isLoggedIn, ValidationController.getMyValidations);
     api.post('/acceptValidation', AuthController.isLoggedIn, ValidationController.acceptValidation);
     api.post('/closeValidation', AuthController.isOracleAuth, ValidationController.closeValidation);
     api.post('/denyPermission', AuthController.isLoggedIn, PermissionController.denyPermission);
     api.post('/sendNFT', AuthController.isLoggedIn, PermissionController.sendNFT);
     api.post('/sendToken', AuthController.isLoggedIn, PermissionController.sendToken);
     api.get('/getMyAssets', AuthController.isLoggedIn, ContractController.getMyAssets);
+    api.get('/getMySecuredAssets', AuthController.isLoggedIn, ContractController.getMySecuredAssets);
 
     // Public Zone //
     api.get('/getProfileInfo', UserController.getProfileInfo);

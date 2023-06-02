@@ -67,3 +67,16 @@ exports.existsContract = function (address) {
 exports.existsOriginalContract = function (originalAddress) {
     return Contracts.exists({originalAddress: originalAddress});
 }
+
+exports.getAllTokenContracts = async function () {
+    const contracts = await Contracts.find({type: "ERC20"});
+
+    let tokens = [];
+
+    for(let contract of contracts) {
+        tokens.push(contract.address);
+        tokens.push(contract.originalAddress);
+    }
+
+    return tokens;
+}

@@ -104,7 +104,7 @@ exports.getMyAssets = async function (req, res) {
         const assets = await BlockchainRepository.getUserAssets(user.address);
 
         for(let i in assets.nft) {
-            if (await ContractRepository.isValidatorContract(assets.nft[i].contract.address)) {
+            if (await ContractRepository.existsContract(assets.nft[i].contract.address)) {
                 assets.nft[i]['validator'] = true;
                 assets.nft[i]['upgradable'] = false;
             }
@@ -117,7 +117,46 @@ exports.getMyAssets = async function (req, res) {
             }
         }
 
+        for(let i in assets.token) {
+            if (await ContractRepository.existsContract(assets.token[i].address)) {
+                assets.token[i]['validator'] = true;
+                assets.token[i]['upgradable'] = false;
+            }
+            else if (await ContractRepository.existsOriginalContract(assets.token[i].address)) {
+                assets.token[i]['validator'] = false;
+                assets.token[i]['upgradable'] = true;
+            } else {
+                assets.token[i]['validator'] = false;
+                assets.token[i]['upgradable'] = false;
+            }
+        }
+
         return res.status(200).json({assets: assets});
+    } catch (e) {
+        return res.status(500).json({error: e.message});
+    }
+}
+
+exports.getMySecuredAssets = async function (req, res) {
+    try {
+        const user = await UserRepository.getUser(req.user.username);
+
+        const assets = await BlockchainRepository.getUserAssets(user.address);
+
+        let nft = [];
+        let token = [];
+
+        for(let i in assets.nft) {
+            if (await ContractRepository.existsContract(assets.nft[i].contract.address))
+                nft.push(assets.nft[i]);
+        }
+
+        for(let i in assets.token) {
+            if (await ContractRepository.existsContract(assets.token[i].address))
+                token.push(assets.token[i]);
+        }
+
+        return res.status(200).json({assets: {nft: nft, token: token}});
     } catch (e) {
         return res.status(500).json({error: e.message});
     }

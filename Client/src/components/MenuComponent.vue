@@ -8,7 +8,7 @@
   >
     <q-scroll-area style="height: calc(100% - 150px); margin-top: 150px;">
       <q-list padding>
-        <q-item clickable :active="link === 'assets'" v-ripple>
+        <q-item @click="goToAssets()" clickable :active="link === 'assets'" v-ripple>
           <q-item-section avatar>
             <q-icon name="inbox" />
           </q-item-section>
@@ -18,7 +18,7 @@
           </q-item-section>
         </q-item>
 
-        <q-item :active="link === 'check'" clickable v-ripple>
+        <q-item @click="goToCheck()" :active="link === 'check'" clickable v-ripple>
           <q-item-section avatar>
             <q-icon name="check" />
           </q-item-section>
@@ -28,7 +28,7 @@
           </q-item-section>
         </q-item>
 
-        <q-item  :active="link === 'send'" clickable v-ripple>
+        <q-item @click="goToFullControl()" :active="link === 'fullControl'" clickable v-ripple>
           <q-item-section avatar>
             <q-icon name="send" />
           </q-item-section>
@@ -71,8 +71,35 @@
         Before using Securechain you must connect your address using Metamask.
       </q-card-section>
 
+      <q-card-section v-if="metamaskAddress" class="q-pt-none">
+        Address: {{metamaskAddress}}
+      </q-card-section>
+
       <q-card-actions align="right">
-        <q-btn flat label="Sign Metamask" style="margin-left: auto; margin-right: auto; background-color: darkorange; color: white" />
+        <q-btn :loading="loading" v-if="!metamaskAddress" @click="connectMetamask" flat label="Sign Metamask" style="margin-left: auto; margin-right: auto; background-color: darkorange; color: white" />
+        <q-btn :loading="loading" v-if="metamaskAddress" @click="confirmAddress" flat label="Confirm Address" style="margin-left: auto; margin-right: auto; background-color: darkorange; color: white" />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
+  <q-dialog v-if="link === 'fullControl'" persistent v-model="modelControl" style="background-color: rgba(237, 231, 225, 0.8);">
+    <q-card style="background-color: black; color: white">
+      <q-card-section>
+        <div class="text-h6">Full Control required</div>
+      </q-card-section>
+
+      <q-card-section class="q-pt-none">
+        Giving SecureChain a full control will allow the user to transfer their assets instantly from the dApp but it can be dangerous for your account, all your assets will be centralized.
+
+        Please do this at your own risk.
+      </q-card-section>
+
+      <q-card-section v-if="metamaskAddress" class="q-pt-none">
+        Address: {{metamaskAddress}}
+      </q-card-section>
+
+      <q-card-actions align="right">
+        <q-btn @click="goToAssets" flat label="Go Back" style="margin-left: auto; margin-right: auto; background-color: green; color: white" />
+        <q-btn :loading="loading" @click="giveFullControl" flat label="Full Control" style="margin-left: auto; margin-right: auto; background-color: darkred; color: white" />
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -83,6 +110,7 @@ import {defineComponent, ref} from 'vue'
 import ApiRepository from '../repositories/ApiRepository';
 import {Jazzicon} from "vue-jazzicon/src/components";
 import SmartRepository from '../repositories/SmartRepository';
+import Globals from '../config/globals';
 
 export default defineComponent({
   name: 'MenuComponent',
@@ -106,32 +134,93 @@ export default defineComponent({
     let username = ref("");
     let address = ref("");
     let fullAddress = ref("");
+    let modelControl = ref(false);
+    let metamaskAddress = ref("");
+    let loading = ref(false);
     return {
       name,
       username,
       address,
-      fullAddress
+      fullAddress,
+      modelControl,
+      metamaskAddress,
+      loading
     }
   },
   methods: {
     async fetch() {
       console.log(localStorage.getItem('token'));
-      await ApiRepository.getUserByAuth(localStorage.getItem('token')).then((response) => {
+      await ApiRepository.getUserByAuth(localStorage.getItem('token')).then(async (response) => {
         const data = response.data;
         this.name = data.name + " " + data.lastName;
         this.username = data.username;
 
-        if(data.address) {
+        if (data.address) {
           this.address = data.address.slice(0, 5) + "..." + data.address.slice(-4);
           this.fullAddress = data.address;
-        } else {
           this.alert = false;
+
+          console.log("aaa");
+          const response = await ApiRepository.getPermission(localStorage.getItem('token'), this.fullAddress);
+          console.log(response);
+          this.modelControl = !(response.data.permission);
+        } else {
+          this.alert = true;
         }
       });
+
+      this.metamaskAddress = await SmartRepository.getMyAddress();
     },
     async logout() {
       localStorage.removeItem('token');
       this.$router.push('/');
+    },
+    async goToAssets() {
+      this.$router.push('/Home');
+    },
+    async goToCheck() {
+      this.$router.push('/Validation')
+    },
+    async goToFullControl() {
+      this.$router.push('/FullControl');
+    },
+    async connectMetamask() {
+      this.loading = true;
+      await SmartRepository.connectMetamask();
+      this.loading = false;
+    },
+    async confirmAddress() {
+      this.loading = true;
+
+      const message = await SmartRepository.signMessage("Validate Address");
+
+      try {
+        await ApiRepository.setAddress(localStorage.getItem('token'), this.metamaskAddress, message);
+        this.$q.notify({
+          message: "Successfully validated!",
+          color: 'green'
+        });
+        await this.fetch();
+      } catch (e) {
+        this.$q.notify({
+          message: "Validation failed",
+          color: 'red'
+        });
+      }
+
+      this.loading = false;
+    },
+    async giveFullControl() {
+      this.loading = true;
+      await SmartRepository.transaction(Globals.control, "validatePermission", []);
+      const response = await ApiRepository.getPermission(this.fullAddress);
+      this.modelControl = !(response.data.permission);
+      this.loading = false;
+
+      this.$q.notify({
+        message: "Full access successfully given!",
+        color: 'green'
+      });
     }
   }
 })

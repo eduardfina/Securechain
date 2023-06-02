@@ -9,7 +9,7 @@ const Schema = mongoose.Schema(
         lastName: String,
         email: {type: String, unique: true},
         verifiedEmail: {type: Boolean, default: false},
-        address: {type: String, unique: true},
+        address: {type: String, unique: true, sparse: true},
         password: String,
         balance: {type: Number, default: 0}
     }

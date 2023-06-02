@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "baseUrl": "./quasar-project",
+    "baseUrl": ".",
     "paths": {
       "src/*": [
         "src/*"
@@ -34,6 +34,6 @@
   "exclude": [
     "dist",
     ".quasar",
-    "quasar-project/node_modules"
+    "node_modules"
   ]
 }

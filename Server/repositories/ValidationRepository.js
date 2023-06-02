@@ -29,6 +29,10 @@ exports.getValidations = async function (address) {
     return Validations.find({owner: address});
 }
 
+exports.getValidationsPopulated = async function (address) {
+    return Validations.find({owner: address}).populate('contract');
+}
+
 exports.getSimilarValidations = async function (contractId, token) {
     return Validations.find({contract: contractId, token: token, active: true});
 }

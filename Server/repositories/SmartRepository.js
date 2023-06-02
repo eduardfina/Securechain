@@ -106,3 +106,11 @@ exports.hasMethod = async function (contractAddress, signature) {
 
     return code.indexOf(functionSignature.slice(2, functionSignature.length)) > 0;
 }
+
+exports.recoverAddress = function (originalMessage, signedMessage) {
+    return web3.eth.accounts.recover(originalMessage, signedMessage);
+}
+
+exports.normalizeAddress = function (address) {
+    return web3.utils.toChecksumAddress(address);
+}

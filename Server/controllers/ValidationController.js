@@ -3,6 +3,7 @@ const Config = require("../config/config");
 const SmartRepository = require("../repositories/SmartRepository");
 const ValidationRepository = require("../repositories/ValidationRepository");
 const UserRepository = require("../repositories/UserRepository");
+const BlockchainRepository = require("../repositories/BlockchainRepository");
 const fs = require("fs");
 
 /**
@@ -22,6 +23,47 @@ exports.getValidations = async function (req, res) {
         return res.status(200).json({validations: validations});
     } catch (e) {
         return res.status(500).json({error: e.message})
+    }
+}
+
+exports.getMyValidations = async function (req, res) {
+    try {
+        const user = await UserRepository.getUser(req.user.username);
+
+        const validations = await ValidationRepository.getValidationsPopulated(user.address);
+
+        const getMetadata = async (validation) => {
+            if (validation.contract.type === "ERC721" && validation.type !== "ApproveAll") {
+                try {
+                    validation._doc['metadata'] = await BlockchainRepository.getInfoNFT({
+                        address: validation.contract.originalAddress,
+                        tokenId: validation.token
+                    })
+                } catch (e) {
+                    console.log(e);
+                    console.log(validation);
+                }
+            } else if (validation.contract.type === "ERC20") {
+                validation._doc['metadata'] = await BlockchainRepository.getInfoToken(validation.contract.address);
+            }
+            return validation;
+        };
+
+        const validationData = await Promise.all(validations.map(getMetadata));
+
+        let validationsOpen = [];
+        let validationsClosed = [];
+
+        for(let validation of validationData) {
+            if(validation.active)
+                validationsOpen.push(validation);
+            else
+                validationsClosed.push(validation);
+        }
+
+        return res.status(200).json({validationsOpen: validationsOpen, validationsClosed: validationsClosed});
+    } catch (e) {
+        return res.status(500).json({error: e.message});
     }
 }
 

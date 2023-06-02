@@ -27,8 +27,8 @@ const configuration = {
         },
         sepolia: {
             name: 'sepolia',
-            host: `https://solemn-long-dust.ethereum-sepolia.quiknode.pro/` + process.env.QUICKNODE_API_KEY,
-            mktp_host: `https://solemn-long-dust.ethereum-sepolia.quiknode.pro/` + process.env.QUICKNODE_MKTP_API_KEY,
+            host: `https://crimson-fluent-arrow.ethereum-sepolia.quiknode.pro/` + process.env.QUICKNODE_API_KEY,
+            wss: `wss://crimson-fluent-arrow.ethereum-sepolia.quiknode.pro/` + process.env.QUICKNODE_API_KEY,
             gasPrice: 300000
         }
     },

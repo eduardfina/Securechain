@@ -51,15 +51,21 @@ exports.setAddress = async function(req, res) {
         const params = req.body;
         const username = req.user.username;
 
-        if (!params.newAddress) {
+        if (!params.address || !params.message) {
             return res.status(401).json({error: "Missing Parameters"});
         }
 
-        if (await UserRepository.existsAddress(params.newAddress)) {
+        let recoveredAddress = SmartRepository.recoverAddress("Validate Address", params.message);
+
+        if(recoveredAddress !== params.address) {
+            return res.status(400).json({error: "Incorrect address or signature"});
+        }
+
+        if (await UserRepository.existsAddress(params.address)) {
             return res.status(400).json({error: "Address already in use!"});
         }
 
-        await UserRepository.modifyInfo(username, "address", params.newAddress);
+        await UserRepository.modifyInfo(username, "address", params.address);
 
         return res.status(200).json({message: "Address changed!"})
     } catch (e) {
