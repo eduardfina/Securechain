@@ -228,7 +228,7 @@ export default defineComponent({
 
       const response = await ApiRepository.getMyAssets(localStorage.getItem('token'))
       this.fullLoading = false;
-      console.log(response);
+
       this.NFTs = response.data.assets.nft;
       this.tokens = response.data.assets.token;
 

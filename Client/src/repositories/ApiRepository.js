@@ -43,7 +43,6 @@ export default {
     return Repository.new().auth(authentication).post("/createContract", {address});
   },
   getContractFromOriginalAddress(authentication, originalAddress) {
-    console.log(authentication);
     return Repository.new().auth(authentication).get("/getContractFromOriginalAddress", {originalAddress});
   },
   acceptValidation(authentication, contractAddress, process, type) {

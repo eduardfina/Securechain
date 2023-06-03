@@ -207,7 +207,6 @@ export default defineComponent({
       this.fullLoading = false;
 
       this.NFTs = response.data.assets.nft;
-      console.log(this.NFTs);
       this.tokens = response.data.assets.token;
     },
     async transferNFT () {
@@ -217,7 +216,6 @@ export default defineComponent({
       const tokenId = this.actualToken.tokenId;
 
       const response = await ApiRepository.sendNFT(localStorage.getItem('token'), receiver, contractAddress, tokenId);
-      console.log(response);
 
       this.etherscan = "https://sepolia.etherscan.io/tx/" + response.data.transaction.hash;
       this.loading = false;

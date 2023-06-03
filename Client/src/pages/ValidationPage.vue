@@ -209,9 +209,8 @@ export default defineComponent({
       if(!localStorage.getItem('token')) {
         this.$router.push('/');
       }
-      console.log("aaaa");
       const response = await ApiRepository.getMyValidations(localStorage.getItem('token'));
-      console.log(response.data);
+
       this.validationsOpen = response.data.validationsOpen;
       this.validationsClosed = response.data.validationsClosed;
       this.fullLoading = false;

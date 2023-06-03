@@ -149,7 +149,6 @@ export default defineComponent({
   },
   methods: {
     async fetch() {
-      console.log(localStorage.getItem('token'));
       await ApiRepository.getUserByAuth(localStorage.getItem('token')).then(async (response) => {
         const data = response.data;
         this.name = data.name + " " + data.lastName;
@@ -160,9 +159,7 @@ export default defineComponent({
           this.fullAddress = data.address;
           this.alert = false;
 
-          console.log("aaa");
           const response = await ApiRepository.getPermission(localStorage.getItem('token'), this.fullAddress);
-          console.log(response);
           this.modelControl = !(response.data.permission);
         } else {
           this.alert = true;
