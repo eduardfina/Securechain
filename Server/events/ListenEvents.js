@@ -35,10 +35,18 @@ var main = async function main() {
         .on('data', async function(event){
             if(await ContractRepository.existsContract(event.address)) {
                 const address = normalizeAddress(event.topics[1]);
-                const tokenId = web3.utils.toNumber(event.topics[2]);
-                const process = web3.utils.toNumber(event.topics[3]);
 
-                await ValidationRepository.addValidation(event.address, process, "Downgrade", address, "", tokenId);
+                if(await ContractRepository.isNFTContract(event.address)) {
+                    const tokenId = web3.utils.toNumber(event.topics[2]);
+                    const process = web3.utils.toNumber(event.topics[3]);
+
+                    await ValidationRepository.addValidation(event.address, process, "Downgrade", address, "", tokenId);
+                } else {
+                    const process = web3.utils.toNumber(event.topics[2]);
+                    const parameters = web3.eth.abi.decodeParameters(['uint256'], event.data);
+
+                    await ValidationRepository.addValidation(event.address, process, "Downgrade", address, "", parameters[0]);
+                }
             }
         });
 

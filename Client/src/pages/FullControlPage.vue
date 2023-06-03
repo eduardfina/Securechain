@@ -77,6 +77,10 @@
         </q-card-section>
 
         <q-card-section>
+          <q-img :src="actualToken.image"></q-img>
+        </q-card-section>
+
+        <q-card-section>
           <q-input outlined dark v-model="receiver" color="grey-3" type="text" label="Receiver Address">
             <template v-slot:prepend>
               <q-icon name="person" />
@@ -85,7 +89,8 @@
         </q-card-section>
 
         <q-card-actions align="right">
-          <q-btn :loading="loading" @click="transferNFT" flat label="Transfer Tokens" style="margin-left: auto; margin-right: auto; background-color: darkorange; color: white" />
+          <q-btn v-if="!etherscan" :loading="loading" @click="transferNFT" flat label="Transfer Tokens" style="margin-left: auto; margin-right: auto; background-color: darkorange; color: white" />
+          <q-btn v-if="etherscan" @click="openURL(etherscan)" flat label="See on Etherscan" style="margin-left: auto; margin-right: auto; background-color: dodgerblue; color: white" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -119,7 +124,8 @@
         </q-card-section>
 
         <q-card-actions align="right">
-          <q-btn :loading="loading" @click="transferTokens" flat label="Transfer Tokens" style="margin-left: auto; margin-right: auto; background-color: darkorange; color: white" />
+          <q-btn v-if="!etherscan" :loading="loading" @click="transferTokens" flat label="Transfer Tokens" style="margin-left: auto; margin-right: auto; background-color: darkorange; color: white" />
+          <q-btn v-if="etherscan" @click="openURL(etherscan)" flat label="See on Etherscan" style="margin-left: auto; margin-right: auto; background-color: dodgerblue; color: white" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -128,7 +134,7 @@
 
 <script>
 import { defineComponent, ref } from 'vue';
-import { useQuasar } from 'quasar';
+import {openURL, useQuasar} from 'quasar';
 import ApiRepository from '../repositories/ApiRepository';
 import MenuComponent from '../components/MenuComponent.vue';
 
@@ -166,6 +172,7 @@ export default defineComponent({
     let NFTs = ref([]);
     let tokens = ref([]);
     let modelAssets = ref('nfts');
+    let etherscan = ref('');
     return {
       $q,
       username,
@@ -180,7 +187,8 @@ export default defineComponent({
       NFTs,
       tokens,
       modelAssets,
-      receiver
+      receiver,
+      etherscan
     }
   },
   data () {
@@ -189,6 +197,7 @@ export default defineComponent({
     }
   },
   methods: {
+    openURL,
     async fetch() {
       if(!localStorage.getItem('token')) {
         this.$router.push('/');
@@ -210,8 +219,8 @@ export default defineComponent({
       const response = await ApiRepository.sendNFT(localStorage.getItem('token'), receiver, contractAddress, tokenId);
       console.log(response);
 
+      this.etherscan = "https://sepolia.etherscan.io/tx/" + response.data.transaction.hash;
       this.loading = false;
-      this.tokenForm = false;
 
       this.$q.notify({
         message: "Successfully send!",
@@ -227,10 +236,9 @@ export default defineComponent({
       const amount = this.amount;
 
       const response = await ApiRepository.sendToken(localStorage.getItem('token'), receiver, contractAddress, amount);
-      console.log(response);
 
+      this.etherscan = "https://sepolia.etherscan.io/tx/" + response.data.transaction.hash;
       this.loading = false;
-      this.tokenForm = false;
 
       this.$q.notify({
         message: "Successfully send!",

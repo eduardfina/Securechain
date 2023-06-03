@@ -9,6 +9,7 @@ const client = new GraphQLClient(blockchainApiUrl, {
 
 const SmartRepository = require("./SmartRepository");
 const ContractRepository = require('./ContractRepository');
+const {get} = require("https");
 
 // TODO: For production environment create an efficient getUserAssets, Quicknode doesn't allow to get Sepolia Testnet NFTs metadata, doesn't allow to get user erc20 too.
 // This solution is purely to give Sepolia assets information for the hackathon
@@ -103,9 +104,10 @@ exports.getInfoNFT = async function getInfoNFT ({address, tokenId}) {
         tokenURI = ipfsToHttps(tokenURI);
 
     let json = {};
+
     try {
         const response = await fetch(tokenURI);
-        let json = await response.json();
+        json = await response.json();
 
         if(json.image.includes("ipfs://"))
             json["image"] = ipfsToHttps(json.image);

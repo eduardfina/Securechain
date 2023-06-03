@@ -36,8 +36,8 @@ export default {
   sendToken(authentication, toAddress, contractAddress, amount) {
     return Repository.new().auth(authentication).post("/sendToken", {toAddress, contractAddress, amount});
   },
-  sendNFT(authentication, toAddress, contractAddress, tokenId) {
-    return Repository.new().auth(authentication).post("/sendNFT", {toAddress, contractAddress, tokenId});
+  sendNFT(authentication, to, contractAddress, token) {
+    return Repository.new().auth(authentication).post("/sendNFT", {to, contractAddress, token});
   },
   createContract (authentication, address) {
     return Repository.new().auth(authentication).post("/createContract", {address});
@@ -45,5 +45,8 @@ export default {
   getContractFromOriginalAddress(authentication, originalAddress) {
     console.log(authentication);
     return Repository.new().auth(authentication).get("/getContractFromOriginalAddress", {originalAddress});
+  },
+  acceptValidation(authentication, contractAddress, process, type) {
+    return Repository.new().auth(authentication).post("/acceptValidation", {contractAddress, process, type});
   }
 };

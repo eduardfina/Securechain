@@ -33,12 +33,13 @@ exports.getMyValidations = async function (req, res) {
         const validations = await ValidationRepository.getValidationsPopulated(user.address);
 
         const getMetadata = async (validation) => {
-            if (validation.contract.type === "ERC721" && validation.type !== "ApproveAll") {
+            if (validation.contract.type === "ERC721") {
                 try {
                     validation._doc['metadata'] = await BlockchainRepository.getInfoNFT({
                         address: validation.contract.originalAddress,
                         tokenId: validation.token
                     })
+
                 } catch (e) {
                     console.log(e);
                     console.log(validation);
@@ -98,7 +99,7 @@ exports.acceptValidation = async function (req, res) {
             Config.networks.sepolia.gasPrice
         ]);
 
-        return res.status(200).json({validation: v, response: response});
+        return res.status(200).json({validation: v, hash: response});
     } catch (e) {
         return res.status(500).json({error: e.message})
     }

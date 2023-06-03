@@ -91,10 +91,13 @@
             </template>
           </q-input>
         </q-card-section>
-
+        <q-card-section v-if="actualToken.validator">
+          <div class="text">Remember to validate the downgrade before the transaction.</div>
+        </q-card-section>
         <q-card-actions align="right">
-          <q-btn v-if="actualToken.upgradable" flat label="Upgrade" style="margin-left: auto; margin-right: auto; background-color: darkorange; color: white" />
-          <q-btn v-if="actualToken.validator" flat label="Downgrade" style="margin-left: auto; margin-right: auto; background-color: darkorange; color: white" />
+          <q-btn :loading="loading" @click="upgradeTokens" v-if="actualToken.upgradable && !etherscan" flat label="Upgrade" style="margin-left: auto; margin-right: auto; background-color: darkorange; color: white" />
+          <q-btn :loading="loading" @click="downgradeTokens" v-if="actualToken.validator && !etherscan" flat label="Downgrade" style="margin-left: auto; margin-right: auto; background-color: darkorange; color: white" />
+          <q-btn v-if="etherscan" @click="openURL(etherscan)" flat label="See on Etherscan" style="margin-left: auto; margin-right: auto; background-color: dodgerblue; color: white" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -190,6 +193,7 @@ export default defineComponent({
     let NFTs = ref([]);
     let tokens = ref([]);
     let modelAssets = ref('nfts');
+    let userAddress = ref('');
     return {
       $q,
       username,
@@ -206,7 +210,8 @@ export default defineComponent({
       NFTs,
       tokens,
       etherscan,
-      modelAssets
+      modelAssets,
+      userAddress
     }
   },
   data () {
@@ -226,6 +231,10 @@ export default defineComponent({
       console.log(response);
       this.NFTs = response.data.assets.nft;
       this.tokens = response.data.assets.token;
+
+      const res = await ApiRepository.getUserByAuth(localStorage.getItem('token'));
+      this.userAddress = res.data.address;
+
     },
     async createContract(address) {
       this.loading = true;
@@ -239,29 +248,50 @@ export default defineComponent({
         color: 'green'
       });
     },
-    async upgradeNFT(NFT) {
+    async upgradeNFT() {
       this.loading = true;
-      let response = await ApiRepository.getContractFromOriginalAddress(localStorage.getItem('token'), NFT.contract.address);
+      let response = await ApiRepository.getContractFromOriginalAddress(localStorage.getItem('token'), this.actualToken.contract.address);
       const securedContract = response.data.contract.address;
 
-      response = await ApiRepository.getUserByAuth(localStorage.getItem('token'));
-      let userAddress = response.data.address;
-
-      const allowance = await SmartRepository.call({address: NFT.contract.address, abi: Globals.erc721abi}, 'isApprovedForAll', [userAddress, securedContract]);
+      const allowance = await SmartRepository.call({address: this.actualToken.contract.address, abi: Globals.erc721abi}, 'isApprovedForAll', [this.userAddress, securedContract]);
 
       if(!allowance) {
-        await SmartRepository.transaction({address: NFT.contract.address, abi: Globals.erc721abi}, 'setApprovalForAll', [securedContract, true]);
+        await SmartRepository.transaction({address: this.actualToken.contract.address, abi: Globals.erc721abi}, 'setApprovalForAll', [securedContract, true]);
       }
 
-      const res = await SmartRepository.transaction({address: securedContract, abi: Globals.nftVabi}, 'upgrade', [NFT.tokenId]);
+      const res = await SmartRepository.transaction({address: securedContract, abi: Globals.nftVabi}, 'upgrade', [this.actualToken.tokenId]);
       this.etherscan = "https://sepolia.etherscan.io/tx/" + res.hash;
 
       this.loading = false;
     },
-    async downgradeNFT(NFT) {
+    async downgradeNFT() {
       this.loading = true;
 
-      const res = await SmartRepository.transaction({address: NFT.contract.address, abi: Globals.nftVabi}, 'downgrade', [NFT.tokenId]);
+      const res = await SmartRepository.transaction({address: this.actualToken.contract.address, abi: Globals.nftVabi}, 'downgrade', [this.actualToken.tokenId]);
+      this.etherscan = "https://sepolia.etherscan.io/tx/" + res.hash;
+
+      this.loading = false;
+    },
+    async upgradeTokens() {
+      this.loading = true;
+      let response = await ApiRepository.getContractFromOriginalAddress(localStorage.getItem('token'), this.actualToken.address);
+      const securedContract = response.data.contract.address;
+
+      const allowance = await SmartRepository.call({address: this.actualToken.address, abi: Globals.erc20abi}, 'allowance', [this.userAddress, securedContract]);
+
+      if(allowance < this.amount) {
+        await SmartRepository.transaction({address: this.actualToken.address, abi: Globals.erc721abi}, 'approve', [securedContract, "999999999999999999999999999999"]);
+      }
+
+      const res = await SmartRepository.transaction({address: securedContract, abi: Globals.tokenVabi}, 'upgrade', [this.amount]);
+      this.etherscan = "https://sepolia.etherscan.io/tx/" + res.hash;
+
+      this.loading = false;
+    },
+    async downgradeTokens() {
+      this.loading = true;
+
+      const res = await SmartRepository.transaction({address: this.actualToken.address, abi: Globals.tokenVabi}, 'downgrade', [this.userAddress, this.amount]);
       this.etherscan = "https://sepolia.etherscan.io/tx/" + res.hash;
 
       this.loading = false;

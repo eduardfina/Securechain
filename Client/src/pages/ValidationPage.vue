@@ -18,8 +18,9 @@
           {label: 'Closed', value: 'closed'}
         ]"
         />
+        <q-spinner-grid v-if="fullLoading" style="width: 34%; height: 5%; margin-left: 33%; margin-right: auto; margin-top: 4%"></q-spinner-grid>
       </div>
-      <div v-if="modelValidations === 'open'" class="q-pa-md">
+      <div v-if="modelValidations === 'open' && !fullLoading" class="q-pa-md">
         <q-table
           color="white"
           card-class="bg-black text-white"
@@ -34,16 +35,19 @@
           <template v-slot:body="props">
             <q-tr :props="props">
               <q-td key="token" :props="props">
-                <q-img style="max-height: 40px; max-width: 40px" :src="props.row.metadata.image"/>
+                <q-img v-if="props.row.metadata" style="max-height: 40px; max-width: 40px" :src="props.row.metadata.image"/>
               </q-td>
               <q-td key="symbol" :props="props">
-                {{ props.row.metadata.symbol }}
+                <span v-if="props.row.contract.type === 'ERC721'">x</span>{{ props.row.metadata.symbol }}
               </q-td>
               <q-td key="name" :props="props">
-                {{ props.row.metadata.name }}
+                <span v-if="props.row.contract.type === 'ERC721'">x</span>{{ props.row.metadata.name }}
               </q-td>
-              <q-td key="amount/id" :props="props">
+              <q-td v-if="props.row.type !== 'ApproveAll'" key="amount/id" :props="props">
                 {{ props.row.token }}
+              </q-td>
+              <q-td v-if="props.row.type === 'ApproveAll'" key="amount/id" :props="props">
+                All
               </q-td>
               <q-td key="type" :props="props">
                 {{ props.row.contract.type }}
@@ -58,7 +62,7 @@
           </template>
         </q-table>
       </div>
-      <div v-if="modelValidations === 'closed'" class="q-pa-md">
+      <div v-if="modelValidations === 'closed' && !fullLoading" class="q-pa-md">
         <q-table
           color="white"
           card-class="bg-black text-white"
@@ -73,19 +77,22 @@
           <template v-slot:body="props">
             <q-tr :props="props">
               <q-td key="token" :props="props">
-                <q-img style="max-height: 40px; max-width: 40px" :src="props.row.metadata.image"/>
+                <q-img v-if="props.row.metadata" style="max-height: 40px; max-width: 40px" :src="props.row.metadata.image"/>
               </q-td>
               <q-td key="symbol" :props="props">
-                {{ props.row.metadata.symbol }}
+                <span v-if="props.row.contract.type === 'ERC721'">x</span>{{ props.row.metadata.symbol }}
               </q-td>
               <q-td key="name" :props="props">
-                {{ props.row.metadata.name }}
+                <span v-if="props.row.contract.type === 'ERC721'">x</span>{{ props.row.metadata.name }}
               </q-td>
               <q-td key="amount/id" :props="props">
                 {{ props.row.token }}
               </q-td>
               <q-td key="type" :props="props">
                 {{ props.row.contract.type }}
+              </q-td>
+              <q-td key="action" :props="props">
+                {{ props.row.type }}
               </q-td>
               <q-td key="validated" :props="props">
                 <q-icon v-if="props.row.accept" class="text-green" size="2em" name="check"></q-icon>
@@ -105,16 +112,25 @@
           <div v-if="actualValidation.type === 'Downgrade'" class="text-h6">Downgrade {{actualValidation.metadata.name}} ({{actualValidation.metadata.symbol}})</div>
         </q-card-section>
 
-        <q-card-section>
+        <q-card-section v-if="actualValidation.type !== 'ApproveAll'">
           <div v-if="actualValidation.contract.type === 'ERC20'" class="text">Amount: {{actualValidation.token}}</div>
-          <div v-if="actualValidation.contract.type === 'ERC721' && actualValidation.type !== 'ApproveAll'" class="text">Token: {{actualValidation.token}}</div>
+          <div v-if="actualValidation.contract.type === 'ERC721'" class="text">Token: {{actualValidation.token}}</div>
+        </q-card-section>
+
+        <q-card-section v-if="actualValidation.contract.type === 'ERC721'">
+          <q-img :src="actualValidation.metadata.image"></q-img>
+        </q-card-section>
+
+        <q-card-section>
+          <div style="max-width: 300px" class="text">After the request transaction can take a couple of minuts for Chainlink Functions to validate.</div>
         </q-card-section>
 
         <q-card-actions align="right">
-          <q-btn v-if="actualValidation.type === 'ApproveAll'" flat label="Approve All" style="margin-left: auto; margin-right: auto; background-color: limegreen; color: white" />
-          <q-btn v-if="actualValidation.type === 'Approve'" flat label="Approve" style="margin-left: auto; margin-right: auto; background-color: green; color: white" />
-          <q-btn v-if="actualValidation.type === 'Transfer'" flat label="Transfer" style="margin-left: auto; margin-right: auto; background-color: darkorange; color: white" />
-          <q-btn v-if="actualValidation.type === 'Downgrade'" flat label="Downgrade" style="margin-left: auto; margin-right: auto; background-color: cornflowerblue; color: white" />
+          <q-btn :loading="loading" @click="validate" v-if="actualValidation.type === 'ApproveAll' && !etherscan" flat label="Approve All" style="margin-left: auto; margin-right: auto; background-color: limegreen; color: white" />
+          <q-btn :loading="loading" @click="validate" v-if="actualValidation.type === 'Approve' && !etherscan" flat label="Approve" style="margin-left: auto; margin-right: auto; background-color: green; color: white" />
+          <q-btn :loading="loading" @click="validate" v-if="actualValidation.type === 'Transfer' && !etherscan" flat label="Transfer" style="margin-left: auto; margin-right: auto; background-color: darkorange; color: white" />
+          <q-btn :loading="loading" @click="validate" v-if="actualValidation.type === 'Downgrade' && !etherscan" flat label="Downgrade" style="margin-left: auto; margin-right: auto; background-color: cornflowerblue; color: white" />
+          <q-btn v-if="etherscan" @click="openURL(etherscan)" flat label="See on Etherscan" style="margin-left: auto; margin-right: auto; background-color: dodgerblue; color: white" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -123,7 +139,7 @@
 
 <script>
 import { defineComponent, ref } from 'vue';
-import { useQuasar } from 'quasar';
+import {openURL, useQuasar} from 'quasar';
 import ApiRepository from '../repositories/ApiRepository';
 import MenuComponent from '../components/MenuComponent.vue';
 import SmartRepository from '../repositories/SmartRepository';
@@ -157,598 +173,14 @@ export default defineComponent({
       { name: 'name', align: 'center', label: 'Name', field: 'name'},
       { name: 'amount/id', align: 'center', label: 'Amount/Id', field: 'amount' },
       { name: 'type', align: 'center', label: "Type", field: 'type'},
+      { name: 'action', align: 'center', label: "Action", field: 'action'},
       { name: 'validated', align: 'center', label: 'Validated', field: 'validated'}
     ]
-    let validationsOpen = [
-      {
-        "_id": "64556ad8c4dce5442bca75f1",
-        "accept": false,
-        "active": true,
-        "contract": {
-          "_id": "645569c4c4dce5442bca75b1",
-          "address": "0x6F467e038e46AfC27CC05B45a29eEc48F0779233",
-          "originalAddress": "0xab46561fb1771f41c347a72a01eb8e65de9b963d",
-          "type": "ERC721",
-          "__v": 0
-        },
-        "process": 0,
-        "type": "ApproveAll",
-        "owner": "0x35C7FbeD330eF8bc41C679104a4294A4d7a83C40",
-        "to": "0x48cE883eb427De41587DB5A96aED876488dfc5b5",
-        "token": 0,
-        "__v": 0,
-        "metadata": {
-          "description": "Cool Cats is a collection of 9,999 randomly generated and stylistically curated NFTs that exist on the Ethereum Blockchain. Cool Cat holders can participate in exclusive events such as NFT claims, raffles, community giveaways, and more. Remember, all cats are cool, but some are cooler than others. Visit [www.coolcatsnft.com](https://www.coolcatsnft.com/) to learn more.",
-            "image": "https://ipfs.io/ipfs/QmcxJoj2F24qXpasJ9XKSXyzuEHHJqdX9sv7Er5isBxZ95",
-            "name": "Cool Cats NFT",
-            "attributes": [
-            {
-              "trait_type": "body",
-              "value": "blue cat skin"
-            },
-            {
-              "trait_type": "hats",
-              "value": "costume frog"
-            },
-            {
-              "trait_type": "shirt",
-              "value": "tanktop sailor red"
-            },
-            {
-              "trait_type": "face",
-              "value": "ninja blue"
-            },
-            {
-              "trait_type": "tier",
-              "value": "classy_1"
-            }
-          ],
-            "points": {
-            "Body": 0,
-              "Hats": 4,
-              "Shirt": 2,
-              "Face": 1
-          },
-          "ipfs_image": "https://ipfs.io/ipfs/QmcxJoj2F24qXpasJ9XKSXyzuEHHJqdX9sv7Er5isBxZ95",
-            "google_image": "https://drive.google.com/uc?id=19D3NWq1oZCKO7EFLPSMcmUSENNRegyvK",
-            "symbol": "CAT"
-        }
-      },
-      {
-        "_id": "64557ab00e3ca2a30ee74dd7",
-        "accept": true,
-        "active": true,
-        "contract": {
-          "_id": "645569c4c4dce5442bca75b1",
-          "address": "0x6F467e038e46AfC27CC05B45a29eEc48F0779233",
-          "originalAddress": "0xab46561fb1771f41c347a72a01eb8e65de9b963d",
-          "type": "ERC721",
-          "__v": 0
-        },
-        "process": 3,
-        "type": "Downgrade",
-        "owner": "0x35C7FbeD330eF8bc41C679104a4294A4d7a83C40",
-        "to": "",
-        "token": 4,
-        "__v": 0,
-        "metadata": {
-          "description": "Cool Cats is a collection of 9,999 randomly generated and stylistically curated NFTs that exist on the Ethereum Blockchain. Cool Cat holders can participate in exclusive events such as NFT claims, raffles, community giveaways, and more. Remember, all cats are cool, but some are cooler than others. Visit [www.coolcatsnft.com](https://www.coolcatsnft.com/) to learn more.",
-          "image": "https://ipfs.io/ipfs/QmcxJoj2F24qXpasJ9XKSXyzuEHHJqdX9sv7Er5isBxZ95",
-          "name": "Cool Cats NFT",
-          "attributes": [
-            {
-              "trait_type": "body",
-              "value": "blue cat skin"
-            },
-            {
-              "trait_type": "hats",
-              "value": "costume frog"
-            },
-            {
-              "trait_type": "shirt",
-              "value": "tanktop sailor red"
-            },
-            {
-              "trait_type": "face",
-              "value": "ninja blue"
-            },
-            {
-              "trait_type": "tier",
-              "value": "classy_1"
-            }
-          ],
-          "points": {
-            "Body": 0,
-            "Hats": 4,
-            "Shirt": 2,
-            "Face": 1
-          },
-          "ipfs_image": "https://ipfs.io/ipfs/QmcxJoj2F24qXpasJ9XKSXyzuEHHJqdX9sv7Er5isBxZ95",
-          "google_image": "https://drive.google.com/uc?id=19D3NWq1oZCKO7EFLPSMcmUSENNRegyvK",
-          "symbol": "CAT"
-        }
-      }
-    ];
-    let validationsClosed = [
-      {
-        "_id": "64556a0cc4dce5442bca75b4",
-        "accept": false,
-        "active": false,
-        "contract": {
-          "_id": "645569c4c4dce5442bca75b1",
-          "address": "0x6F467e038e46AfC27CC05B45a29eEc48F0779233",
-          "originalAddress": "0xab46561fb1771f41c347a72a01eb8e65de9b963d",
-          "type": "ERC721",
-          "__v": 0
-        },
-        "process": 0,
-        "type": "Downgrade",
-        "owner": "0x35C7FbeD330eF8bc41C679104a4294A4d7a83C40",
-        "to": "",
-        "token": 1,
-        "__v": 0,
-        "metadata": {
-          "description": "Cool Cats is a collection of 9,999 randomly generated and stylistically curated NFTs that exist on the Ethereum Blockchain. Cool Cat holders can participate in exclusive events such as NFT claims, raffles, community giveaways, and more. Remember, all cats are cool, but some are cooler than others. Visit [www.coolcatsnft.com](https://www.coolcatsnft.com/) to learn more.",
-          "image": "https://ipfs.io/ipfs/QmYrxAviWHGugdikgU1Awc8MRtfqxMYYRmBuCTMEc5mCAx",
-          "name": "Cool Cat #1",
-          "attributes": [
-            {
-              "trait_type": "body",
-              "value": "blue cat skin"
-            },
-            {
-              "trait_type": "hats",
-              "value": "hat black"
-            },
-            {
-              "trait_type": "shirt",
-              "value": "winter red"
-            },
-            {
-              "trait_type": "face",
-              "value": "sunglasses blue"
-            },
-            {
-              "trait_type": "tier",
-              "value": "wild_1"
-            }
-          ],
-          "points": {
-            "Body": 0,
-            "Shirt": 2,
-            "Hats": 2,
-            "Face": 1
-          },
-          "ipfs_image": "https://ipfs.io/ipfs/QmYrxAviWHGugdikgU1Awc8MRtfqxMYYRmBuCTMEc5mCAx",
-          "google_image": "https://drive.google.com/uc?id=1ZYdHKuETneoIWDNvbLD0SHmG83-LXXw1"
-        }
-      },
-      {
-        "_id": "64556a24c4dce5442bca75b9",
-        "accept": false,
-        "active": false,
-        "contract": {
-          "_id": "645569c4c4dce5442bca75b1",
-          "address": "0x6F467e038e46AfC27CC05B45a29eEc48F0779233",
-          "originalAddress": "0xab46561fb1771f41c347a72a01eb8e65de9b963d",
-          "type": "ERC721",
-          "__v": 0
-        },
-        "process": 0,
-        "type": "Transfer",
-        "owner": "0x35C7FbeD330eF8bc41C679104a4294A4d7a83C40",
-        "to": "0xD1a33005d8520369EeC0f180358e7487581886A4",
-        "token": 1,
-        "__v": 0,
-        "metadata": {
-          "description": "Cool Cats is a collection of 9,999 randomly generated and stylistically curated NFTs that exist on the Ethereum Blockchain. Cool Cat holders can participate in exclusive events such as NFT claims, raffles, community giveaways, and more. Remember, all cats are cool, but some are cooler than others. Visit [www.coolcatsnft.com](https://www.coolcatsnft.com/) to learn more.",
-          "image": "https://ipfs.io/ipfs/QmYrxAviWHGugdikgU1Awc8MRtfqxMYYRmBuCTMEc5mCAx",
-          "name": "Cool Cat #1",
-          "attributes": [
-            {
-              "trait_type": "body",
-              "value": "blue cat skin"
-            },
-            {
-              "trait_type": "hats",
-              "value": "hat black"
-            },
-            {
-              "trait_type": "shirt",
-              "value": "winter red"
-            },
-            {
-              "trait_type": "face",
-              "value": "sunglasses blue"
-            },
-            {
-              "trait_type": "tier",
-              "value": "wild_1"
-            }
-          ],
-          "points": {
-            "Body": 0,
-            "Shirt": 2,
-            "Hats": 2,
-            "Face": 1
-          },
-          "ipfs_image": "https://ipfs.io/ipfs/QmYrxAviWHGugdikgU1Awc8MRtfqxMYYRmBuCTMEc5mCAx",
-          "google_image": "https://drive.google.com/uc?id=1ZYdHKuETneoIWDNvbLD0SHmG83-LXXw1"
-        }
-      },
-      {
-        "_id": "64556a30c4dce5442bca75be",
-        "accept": true,
-        "active": false,
-        "contract": {
-          "_id": "645569c4c4dce5442bca75b1",
-          "address": "0x6F467e038e46AfC27CC05B45a29eEc48F0779233",
-          "originalAddress": "0xab46561fb1771f41c347a72a01eb8e65de9b963d",
-          "type": "ERC721",
-          "__v": 0
-        },
-        "process": 1,
-        "type": "Downgrade",
-        "owner": "0x35C7FbeD330eF8bc41C679104a4294A4d7a83C40",
-        "to": "",
-        "token": 1,
-        "__v": 0,
-        "metadata": {
-          "description": "Cool Cats is a collection of 9,999 randomly generated and stylistically curated NFTs that exist on the Ethereum Blockchain. Cool Cat holders can participate in exclusive events such as NFT claims, raffles, community giveaways, and more. Remember, all cats are cool, but some are cooler than others. Visit [www.coolcatsnft.com](https://www.coolcatsnft.com/) to learn more.",
-          "image": "https://ipfs.io/ipfs/QmYrxAviWHGugdikgU1Awc8MRtfqxMYYRmBuCTMEc5mCAx",
-          "name": "Cool Cat #1",
-          "attributes": [
-            {
-              "trait_type": "body",
-              "value": "blue cat skin"
-            },
-            {
-              "trait_type": "hats",
-              "value": "hat black"
-            },
-            {
-              "trait_type": "shirt",
-              "value": "winter red"
-            },
-            {
-              "trait_type": "face",
-              "value": "sunglasses blue"
-            },
-            {
-              "trait_type": "tier",
-              "value": "wild_1"
-            }
-          ],
-          "points": {
-            "Body": 0,
-            "Shirt": 2,
-            "Hats": 2,
-            "Face": 1
-          },
-          "ipfs_image": "https://ipfs.io/ipfs/QmYrxAviWHGugdikgU1Awc8MRtfqxMYYRmBuCTMEc5mCAx",
-          "google_image": "https://drive.google.com/uc?id=1ZYdHKuETneoIWDNvbLD0SHmG83-LXXw1"
-        }
-      },
-      {
-        "_id": "64556b44c4dce5442bca75f6",
-        "accept": true,
-        "active": false,
-        "contract": {
-          "_id": "645569c4c4dce5442bca75b1",
-          "address": "0x6F467e038e46AfC27CC05B45a29eEc48F0779233",
-          "originalAddress": "0xab46561fb1771f41c347a72a01eb8e65de9b963d",
-          "type": "ERC721",
-          "__v": 0
-        },
-        "process": 1,
-        "type": "Transfer",
-        "owner": "0x35C7FbeD330eF8bc41C679104a4294A4d7a83C40",
-        "to": "0xD1a33005d8520369EeC0f180358e7487581886A4",
-        "token": 2,
-        "__v": 0,
-        "metadata": {
-          "description": "Cool Cats is a collection of 9,999 randomly generated and stylistically curated NFTs that exist on the Ethereum Blockchain. Cool Cat holders can participate in exclusive events such as NFT claims, raffles, community giveaways, and more. Remember, all cats are cool, but some are cooler than others. Visit [www.coolcatsnft.com](https://www.coolcatsnft.com/) to learn more.",
-          "image": "https://ipfs.io/ipfs/QmcxJoj2F24qXpasJ9XKSXyzuEHHJqdX9sv7Er5isBxZ95",
-          "name": "Cool Cat #2",
-          "attributes": [
-            {
-              "trait_type": "body",
-              "value": "blue cat skin"
-            },
-            {
-              "trait_type": "hats",
-              "value": "costume frog"
-            },
-            {
-              "trait_type": "shirt",
-              "value": "tanktop sailor red"
-            },
-            {
-              "trait_type": "face",
-              "value": "ninja blue"
-            },
-            {
-              "trait_type": "tier",
-              "value": "classy_1"
-            }
-          ],
-          "points": {
-            "Body": 0,
-            "Hats": 4,
-            "Shirt": 2,
-            "Face": 1
-          },
-          "ipfs_image": "https://ipfs.io/ipfs/QmcxJoj2F24qXpasJ9XKSXyzuEHHJqdX9sv7Er5isBxZ95",
-          "google_image": "https://drive.google.com/uc?id=19D3NWq1oZCKO7EFLPSMcmUSENNRegyvK"
-        }
-      },
-      {
-        "_id": "64556b68c4dce5442bca75fc",
-        "accept": true,
-        "active": false,
-        "contract": {
-          "_id": "645569c4c4dce5442bca75b1",
-          "address": "0x6F467e038e46AfC27CC05B45a29eEc48F0779233",
-          "originalAddress": "0xab46561fb1771f41c347a72a01eb8e65de9b963d",
-          "type": "ERC721",
-          "__v": 0
-        },
-        "process": 1,
-        "type": "Approve",
-        "owner": "0x35C7FbeD330eF8bc41C679104a4294A4d7a83C40",
-        "to": "0x48cE883eb427De41587DB5A96aED876488dfc5b5",
-        "token": 2,
-        "__v": 0,
-        "metadata": {
-          "description": "Cool Cats is a collection of 9,999 randomly generated and stylistically curated NFTs that exist on the Ethereum Blockchain. Cool Cat holders can participate in exclusive events such as NFT claims, raffles, community giveaways, and more. Remember, all cats are cool, but some are cooler than others. Visit [www.coolcatsnft.com](https://www.coolcatsnft.com/) to learn more.",
-          "image": "https://ipfs.io/ipfs/QmcxJoj2F24qXpasJ9XKSXyzuEHHJqdX9sv7Er5isBxZ95",
-          "name": "Cool Cat #2",
-          "attributes": [
-            {
-              "trait_type": "body",
-              "value": "blue cat skin"
-            },
-            {
-              "trait_type": "hats",
-              "value": "costume frog"
-            },
-            {
-              "trait_type": "shirt",
-              "value": "tanktop sailor red"
-            },
-            {
-              "trait_type": "face",
-              "value": "ninja blue"
-            },
-            {
-              "trait_type": "tier",
-              "value": "classy_1"
-            }
-          ],
-          "points": {
-            "Body": 0,
-            "Hats": 4,
-            "Shirt": 2,
-            "Face": 1
-          },
-          "ipfs_image": "https://ipfs.io/ipfs/QmcxJoj2F24qXpasJ9XKSXyzuEHHJqdX9sv7Er5isBxZ95",
-          "google_image": "https://drive.google.com/uc?id=19D3NWq1oZCKO7EFLPSMcmUSENNRegyvK"
-        }
-      },
-      {
-        "_id": "64556c04c4dce5442bca7643",
-        "accept": false,
-        "active": false,
-        "contract": {
-          "_id": "645569c4c4dce5442bca75b1",
-          "address": "0x6F467e038e46AfC27CC05B45a29eEc48F0779233",
-          "originalAddress": "0xab46561fb1771f41c347a72a01eb8e65de9b963d",
-          "type": "ERC721",
-          "__v": 0
-        },
-        "process": 2,
-        "type": "Approve",
-        "owner": "0x35C7FbeD330eF8bc41C679104a4294A4d7a83C40",
-        "to": "0xDd9696dd94d6D04FCe98c05358f4bDA592bE6a8f",
-        "token": 2,
-        "__v": 0,
-        "metadata": {
-          "description": "Cool Cats is a collection of 9,999 randomly generated and stylistically curated NFTs that exist on the Ethereum Blockchain. Cool Cat holders can participate in exclusive events such as NFT claims, raffles, community giveaways, and more. Remember, all cats are cool, but some are cooler than others. Visit [www.coolcatsnft.com](https://www.coolcatsnft.com/) to learn more.",
-          "image": "https://ipfs.io/ipfs/QmcxJoj2F24qXpasJ9XKSXyzuEHHJqdX9sv7Er5isBxZ95",
-          "name": "Cool Cat #2",
-          "attributes": [
-            {
-              "trait_type": "body",
-              "value": "blue cat skin"
-            },
-            {
-              "trait_type": "hats",
-              "value": "costume frog"
-            },
-            {
-              "trait_type": "shirt",
-              "value": "tanktop sailor red"
-            },
-            {
-              "trait_type": "face",
-              "value": "ninja blue"
-            },
-            {
-              "trait_type": "tier",
-              "value": "classy_1"
-            }
-          ],
-          "points": {
-            "Body": 0,
-            "Hats": 4,
-            "Shirt": 2,
-            "Face": 1
-          },
-          "ipfs_image": "https://ipfs.io/ipfs/QmcxJoj2F24qXpasJ9XKSXyzuEHHJqdX9sv7Er5isBxZ95",
-          "google_image": "https://drive.google.com/uc?id=19D3NWq1oZCKO7EFLPSMcmUSENNRegyvK"
-        }
-      },
-      {
-        "_id": "64556d78c4dce5442bca7699",
-        "accept": true,
-        "active": false,
-        "contract": {
-          "_id": "645569c4c4dce5442bca75b1",
-          "address": "0x6F467e038e46AfC27CC05B45a29eEc48F0779233",
-          "originalAddress": "0xab46561fb1771f41c347a72a01eb8e65de9b963d",
-          "type": "ERC721",
-          "__v": 0
-        },
-        "process": 2,
-        "type": "Downgrade",
-        "owner": "0x35C7FbeD330eF8bc41C679104a4294A4d7a83C40",
-        "to": "",
-        "token": 2,
-        "__v": 0,
-        "metadata": {
-          "description": "Cool Cats is a collection of 9,999 randomly generated and stylistically curated NFTs that exist on the Ethereum Blockchain. Cool Cat holders can participate in exclusive events such as NFT claims, raffles, community giveaways, and more. Remember, all cats are cool, but some are cooler than others. Visit [www.coolcatsnft.com](https://www.coolcatsnft.com/) to learn more.",
-          "image": "https://ipfs.io/ipfs/QmcxJoj2F24qXpasJ9XKSXyzuEHHJqdX9sv7Er5isBxZ95",
-          "name": "Cool Cat #2",
-          "attributes": [
-            {
-              "trait_type": "body",
-              "value": "blue cat skin"
-            },
-            {
-              "trait_type": "hats",
-              "value": "costume frog"
-            },
-            {
-              "trait_type": "shirt",
-              "value": "tanktop sailor red"
-            },
-            {
-              "trait_type": "face",
-              "value": "ninja blue"
-            },
-            {
-              "trait_type": "tier",
-              "value": "classy_1"
-            }
-          ],
-          "points": {
-            "Body": 0,
-            "Hats": 4,
-            "Shirt": 2,
-            "Face": 1
-          },
-          "ipfs_image": "https://ipfs.io/ipfs/QmcxJoj2F24qXpasJ9XKSXyzuEHHJqdX9sv7Er5isBxZ95",
-          "google_image": "https://drive.google.com/uc?id=19D3NWq1oZCKO7EFLPSMcmUSENNRegyvK"
-        }
-      },
-      {
-        "_id": "64556e5dc4dce5442bca76ca",
-        "accept": true,
-        "active": false,
-        "contract": {
-          "_id": "645569c4c4dce5442bca75b1",
-          "address": "0x6F467e038e46AfC27CC05B45a29eEc48F0779233",
-          "originalAddress": "0xab46561fb1771f41c347a72a01eb8e65de9b963d",
-          "type": "ERC721",
-          "__v": 0
-        },
-        "process": 2,
-        "type": "Transfer",
-        "owner": "0x35C7FbeD330eF8bc41C679104a4294A4d7a83C40",
-        "to": "0x5Ce8C624286e91b44e5278FA446c36C2b017bfe8",
-        "token": 2,
-        "__v": 0,
-        "metadata": {
-          "description": "Cool Cats is a collection of 9,999 randomly generated and stylistically curated NFTs that exist on the Ethereum Blockchain. Cool Cat holders can participate in exclusive events such as NFT claims, raffles, community giveaways, and more. Remember, all cats are cool, but some are cooler than others. Visit [www.coolcatsnft.com](https://www.coolcatsnft.com/) to learn more.",
-          "image": "https://ipfs.io/ipfs/QmcxJoj2F24qXpasJ9XKSXyzuEHHJqdX9sv7Er5isBxZ95",
-          "name": "Cool Cat #2",
-          "attributes": [
-            {
-              "trait_type": "body",
-              "value": "blue cat skin"
-            },
-            {
-              "trait_type": "hats",
-              "value": "costume frog"
-            },
-            {
-              "trait_type": "shirt",
-              "value": "tanktop sailor red"
-            },
-            {
-              "trait_type": "face",
-              "value": "ninja blue"
-            },
-            {
-              "trait_type": "tier",
-              "value": "classy_1"
-            }
-          ],
-          "points": {
-            "Body": 0,
-            "Hats": 4,
-            "Shirt": 2,
-            "Face": 1
-          },
-          "ipfs_image": "https://ipfs.io/ipfs/QmcxJoj2F24qXpasJ9XKSXyzuEHHJqdX9sv7Er5isBxZ95",
-          "google_image": "https://drive.google.com/uc?id=19D3NWq1oZCKO7EFLPSMcmUSENNRegyvK"
-        }
-      },
-      {
-        "_id": "64556f34c4dce5442bca76fb",
-        "accept": true,
-        "active": false,
-        "contract": {
-          "_id": "645569c4c4dce5442bca75b1",
-          "address": "0x6F467e038e46AfC27CC05B45a29eEc48F0779233",
-          "originalAddress": "0xab46561fb1771f41c347a72a01eb8e65de9b963d",
-          "type": "ERC721",
-          "__v": 0
-        },
-        "process": 3,
-        "type": "Approve",
-        "owner": "0x35C7FbeD330eF8bc41C679104a4294A4d7a83C40",
-        "to": "0x5Ce8C624286e91b44e5278FA446c36C2b017bfe8",
-        "token": 3,
-        "__v": 0,
-        "metadata": {
-          "description": "Cool Cats is a collection of 9,999 randomly generated and stylistically curated NFTs that exist on the Ethereum Blockchain. Cool Cat holders can participate in exclusive events such as NFT claims, raffles, community giveaways, and more. Remember, all cats are cool, but some are cooler than others. Visit [www.coolcatsnft.com](https://www.coolcatsnft.com/) to learn more.",
-          "image": "https://ipfs.io/ipfs/QmY3aNgaE3NNHc3sZTBENFgRosny1EGCWjUZV5aTXvTB5S",
-          "name": "Cool Cat #3",
-          "attributes": [
-            {
-              "trait_type": "body",
-              "value": "blue cat skin"
-            },
-            {
-              "trait_type": "hats",
-              "value": "mohawk purple"
-            },
-            {
-              "trait_type": "shirt",
-              "value": "hoodie purple"
-            },
-            {
-              "trait_type": "face",
-              "value": "beard pirate"
-            },
-            {
-              "trait_type": "tier",
-              "value": "cool_2"
-            }
-          ],
-          "points": {
-            "Body": 0,
-            "Hats": 1,
-            "Shirt": 1,
-            "Face": 2
-          },
-          "ipfs_image": "https://ipfs.io/ipfs/QmY3aNgaE3NNHc3sZTBENFgRosny1EGCWjUZV5aTXvTB5S",
-          "google_image": "https://drive.google.com/uc?id=1sHLQkAbPdbT4U7Ct_kkawL3J3G_rHRWD"
-        }
-      }
-    ];
-    let modelValidations = ref('closed');
+    let validationsOpen = ref([]);
+    let validationsClosed = ref([]);
+    let modelValidations = ref('open');
+    let fullLoading = ref(true);
+    let etherscan = ref("");
     return {
       $q,
       username,
@@ -761,7 +193,9 @@ export default defineComponent({
       amount,
       validationsOpen,
       validationsClosed,
-      modelValidations
+      modelValidations,
+      fullLoading,
+      etherscan
     }
   },
   data () {
@@ -770,15 +204,28 @@ export default defineComponent({
     }
   },
   methods: {
+    openURL,
     async fetch() {
       if(!localStorage.getItem('token')) {
         this.$router.push('/');
       }
+      console.log("aaaa");
+      const response = await ApiRepository.getMyValidations(localStorage.getItem('token'));
+      console.log(response.data);
+      this.validationsOpen = response.data.validationsOpen;
+      this.validationsClosed = response.data.validationsClosed;
+      this.fullLoading = false;
+    },
+    async validate() {
+      this.loading = true;
+      const contractAddress = this.actualValidation.contract.address;
+      const process = this.actualValidation.process;
+      const type = this.actualValidation.type;
 
-      //const response = await ApiRepository.getMyValidations(localStorage.getItem('token'));
-      //console.log(response.data);
-      //this.validationsOpen = response.data.validationsOpen;
-      //this.validationsClosed = response.data.validationsClosed;
+      const response = await ApiRepository.acceptValidation(localStorage.getItem('token'), contractAddress, process, type);
+      this.etherscan = "https://sepolia.etherscan.io/tx/" + response.data.hash;
+
+      this.loading = false;
     }
   },
 })
