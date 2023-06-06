@@ -33,7 +33,7 @@
                   <q-icon name="lock" />
                 </template>
               </q-input>
-              <q-input outlined dark v-model="repeatPassword" color="grey-3" type="repeatPassword" label="Repeat Password">
+              <q-input outlined dark v-model="repeatPassword" color="grey-3" type="password" label="Repeat Password">
                 <template v-slot:prepend>
                   <q-icon name="lock" />
                 </template>

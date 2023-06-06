@@ -1,6 +1,6 @@
 # Securechain
 
-[VIDEO PRESENTATION](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-6997.md)
+[VIDEO PRESENTATION](https://youtu.be/v-rs1eO-mZs)
 
 ## Inspiration
 

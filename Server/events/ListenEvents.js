@@ -1,6 +1,7 @@
 const ContractRepository = require("../repositories/ContractRepository");
 const ValidationRepository = require("../repositories/ValidationRepository");
 const PermissionRepository = require("../repositories/PermissionRepository");
+const EmailRepository = require('../repositories/EmailRepository');
 const Config = require("../config/config");
 
 var Web3 = require('web3');
@@ -65,6 +66,7 @@ var main = async function main() {
                     const parameters = web3.eth.abi.decodeParameters(['address'], event.data);
 
                     await ValidationRepository.addValidation(event.address, process, "Transfer", address, parameters[0], token);
+                    //Send NFT Email (I had no more SocketLabs subscription)
                 } else {
                     const to = normalizeAddress(event.topics[2]);
                     const process = web3.utils.toNumber(event.topics[3]);
