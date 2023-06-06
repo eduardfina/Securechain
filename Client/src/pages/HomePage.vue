@@ -30,9 +30,9 @@
           </q-card-section>
 
           <q-card-section class="q-pt-none">
-            <q-btn @click="actualToken=nft; upgradeForm=true" v-if="nft.upgradable" flat label="Upgrade NFT" style="margin-left: auto; margin-right: auto; background-color: limegreen; color: white; width: 100%; font-size: 70%" />
-            <q-btn @click="actualToken=nft; downgradeForm=true" v-if="nft.validator" flat label="Downgrade NFT" style="margin-left: auto; margin-right: auto; background-color: cornflowerblue; color: white; width: 100%; font-size: 70%" />
-            <q-btn @click="actualToken=nft; validateForm=true" v-if="!nft.validator && !nft.upgradable" flat label="Validate Contract" style="margin-left: auto; margin-right: auto; background-color: darkred; color: white; width: 100%; font-size: 70%" />
+            <q-btn @click="actualToken=nft; upgradeForm=true" v-if="nft.upgradable && Array.from(nft.name)[0] !== 'x'" flat label="Upgrade NFT" style="margin-left: auto; margin-right: auto; background-color: limegreen; color: white; width: 100%; font-size: 70%" />
+            <q-btn @click="actualToken=nft; downgradeForm=true" v-if="nft.validator || Array.from(nft.name)[0] === 'x'" flat label="Downgrade NFT" style="margin-left: auto; margin-right: auto; background-color: cornflowerblue; color: white; width: 100%; font-size: 70%" />
+            <q-btn @click="actualToken=nft; validateForm=true" v-if="!nft.validator && !nft.upgradable && Array.from(nft.name)[0] !== 'x'" flat label="Validate Contract" style="margin-left: auto; margin-right: auto; background-color: darkred; color: white; width: 100%; font-size: 70%" />
           </q-card-section>
         </q-card>
       </q-list>

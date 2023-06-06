@@ -5,7 +5,7 @@ interface IValidation {
 
     function validateTransfer(uint256 transferId) external;
 
-    function validateApprove(uint256 approveId) external;
+    function validateApproval(uint256 approveId) external;
 
     function validateDowngrade(uint256 downgradeId) external;
 }

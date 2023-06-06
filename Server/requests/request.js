@@ -1,11 +1,20 @@
 // Define constants for the API endpoint and request parameters
-const API_ENDPOINT = "https://2a4b-81-184-180-154.eu.ngrok.io"
+// Must set the endpoint where the server is deployed, I used ngrok to connect with localhost
+const API_ENDPOINT = "[API_ENDPOINT]"
+
+if (
+    !secrets.API_KEY
+) {
+    throw Error(
+        "Need to set API_KEY environment variable"
+    )
+}
 
 // Get the arguments from the request config
-const contractAddress = args[0] // e.g. "New York City"
-const process = args[1] // e.g. "Washington DC"
+const contractAddress = args[0]
+const process = args[1]
 const type = args[2]
-const apiKey = secrets.API_KEY;
+const apiKey = secrets.apiKey || "";
 
 const headers = {
     'Content-Type': 'application/json',
@@ -19,7 +28,7 @@ const isValidRequest = {
     url: `${API_ENDPOINT}/isValid?contractAddress=${contractAddress}&process=${process}&type=${type}`
 }
 
-// Make the HTTP request to the Google Maps API
+// Make the HTTP request to the API
 let request = Functions.makeHttpRequest(isValidRequest)
 let response
 
@@ -58,7 +67,7 @@ const closeValidationRequest = {
     }
 }
 
-// Make the HTTP request to the Google Maps API
+// Make the HTTP request to the API
 request = Functions.makeHttpRequest(closeValidationRequest)
 response
 
@@ -73,5 +82,5 @@ if (response.status !== 200) {
     throw new Error(`API returned an error: ${response.statusText}`)
 }
 
-// Encode and return the distance (in meters), standard duration (in seconds), and duration in traffic (in seconds) as a string which can be parsed and split
+// Encode and return if the function is valid (boolean)
 return Functions.encodeString(`${valid}`)

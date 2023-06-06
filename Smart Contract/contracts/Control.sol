@@ -377,7 +377,7 @@ contract Control is FunctionsClient, ConfirmedOwner, Context {
       if(validateType == TRANSFER)
         IValidation(validation.contractAddress).validateTransfer(validation.process);
       else if(validateType == APPROVE)
-        IValidation(validation.contractAddress).validateApprove(validation.process);
+        IValidation(validation.contractAddress).validateApproval(validation.process);
       else if(validateType == DOWNGRADE)
         IValidation(validation.contractAddress).validateDowngrade(validation.process);
 

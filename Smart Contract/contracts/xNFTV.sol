@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: unlicensed
 pragma solidity 0.8.17;
 
-import "./ERC721V.sol";
+import "./ERC6997.sol";
 import "./IControl.sol";
 
-contract xNFTV is ERC721V {
+contract xNFTV is ERC6997 {
 
     struct DowngradeValidation {
         // The address of the owner.
@@ -29,7 +29,7 @@ contract xNFTV is ERC721V {
     // Total number of downgrade validations
     uint256 private _totalDowngradeValidations;
 
-    constructor (string memory name, string memory symbol, address _control, address _originalContract) ERC721V(name, symbol){
+    constructor (string memory name, string memory symbol, address _control, address _originalContract) ERC6997(name, symbol){
         control = _control;
         originalContract = _originalContract;
     }
@@ -100,12 +100,12 @@ contract xNFTV is ERC721V {
         _validateTransfer(transferId);
     }
 
-    function validateApprove(uint256 approveId) public onlyActiveControl {
+    function validateApproval(uint256 approvalId) public onlyActiveControl {
         if(!IControl(control).isActive()) {
-            ApproveValidation memory v = approveValidation(approveId);
+            ApprovalValidation memory v = approvalValidation(approvalId);
             require(v.owner == _msgSender(), "xNFTV: You are not the owner");
         }
-        _validateApprove(approveId);
+        _validateApproval(approvalId);
     }
 
     function validateDowngrade(uint256 downgradeId) public onlyActiveControl {

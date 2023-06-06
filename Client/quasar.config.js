@@ -156,8 +156,8 @@ module.exports = configure(function (ctx) {
 
 
       manifest: {
-        name: `Security-Blockchain-Assets-Front-End`,
-        short_name: `Security-Blockchain-Assets-Front-End`,
+        name: `Securechain`,
+        short_name: `Securechain`,
         description: `A Quasar Project`,
         display: 'standalone',
         orientation: 'portrait',

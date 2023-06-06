@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: unlicensed
 pragma solidity 0.8.17;
 
-import "./ERC20V.sol";
+import "./ERC7144.sol";
 import "./IControl.sol";
 
-contract xTokenV is ERC20V {
+contract xTokenV is ERC7144 {
 
     struct DowngradeValidation {
         // The address of the owner.
@@ -29,7 +29,7 @@ contract xTokenV is ERC20V {
     // Total number of downgrade validations
     uint256 private _totalDowngradeValidations;
 
-    constructor (string memory _name, string memory _symbol, address _control, address _originalContract) ERC20V(_name, _symbol){
+    constructor (string memory _name, string memory _symbol, address _control, address _originalContract) ERC7144(_name, _symbol){
         control = _control;
         originalContract = _originalContract;
     }
@@ -88,12 +88,12 @@ contract xTokenV is ERC20V {
         _validateTransfer(transferId);
     }
 
-    function validateApprove(uint256 approveId) public onlyActiveControl {
+    function validateApproval(uint256 approvalId) public onlyActiveControl {
         if(!IControl(control).isActive()) {
-            ApproveValidation memory v = approveValidation(approveId);
+            ApprovalValidation memory v = approvalValidation(approvalId);
             require(v.owner == _msgSender(), "xTokenV: You are not the owner");
         }
-        _validateApprove(approveId);
+        _validateApproval(approvalId);
     }
 
     function validateDowngrade(uint256 downgradeId) public onlyActiveControl {

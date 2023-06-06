@@ -42,7 +42,6 @@ exports.getMyValidations = async function (req, res) {
 
                 } catch (e) {
                     console.log(e);
-                    console.log(validation);
                 }
             } else if (validation.contract.type === "ERC20") {
                 validation._doc['metadata'] = await BlockchainRepository.getInfoToken(validation.contract.address);
@@ -89,11 +88,11 @@ exports.acceptValidation = async function (req, res) {
         if(params.type === "ApproveAll")
             params.type = "Approve";
 
+            //const secrets = Config.secretsURL;
+
         const response = await SmartRepository.transaction(Config.control, "executeRequest", [
             fs.readFileSync("./requests/request.js").toString(),
-            `0x${Buffer.from(
-                `https://2a4b-81-184-180-154.eu.ngrok.io/secrets.json`
-            ).toString("hex")}`,
+            [],
             [params.contractAddress, params.process, params.type],
             Config.subscriptionId,
             Config.networks.sepolia.gasPrice
@@ -107,7 +106,6 @@ exports.acceptValidation = async function (req, res) {
 
 exports.closeValidation = async function (req, res) {
     try {
-        console.log("Close Validation");
         const params = req.body;
 
         if (!params.contractAddress || !params.process || !params.type) {
@@ -134,34 +132,6 @@ exports.isValid = async function (req, res) {
         const active = await ValidationRepository.isActive(params.contractAddress, params.process, params.type);
 
         return res.status(200).json({valid: valid && active});
-    } catch (e) {
-        return res.status(500).json({error: e.message})
-    }
-}
-
-exports.estimateCostAcceptValidation = async function (req, res) {
-    try {
-        const params = req.body;
-
-        if (!params.contractAddress || !params.process || !params.type) {
-            return res.status(401).json({error: "Missing Parameters"});
-        }
-
-        const gasPrice = await SmartRepository.getGasPrice();
-
-        const estimateCost = await SmartRepository.call(Config.control, "estimateCost", [
-            [Config.codeLocation,
-            1,
-            Config.codeLanguage,
-            fs.readFileSync("./requests/request.js").toString(),
-            { API_KEY: Config.oracleAuth },
-            [params.contractAddress, params.process, params.type]],
-            Config.subscriptionId,
-            Config.networks.sepolia.gasPrice,
-            gasPrice
-        ]);
-
-        return res.status(200).json({estimation: estimateCost});
     } catch (e) {
         return res.status(500).json({error: e.message})
     }

@@ -166,7 +166,7 @@ export default defineComponent({
         }
       });
 
-      this.metamaskAddress = await SmartRepository.getMyAddress();
+      this.metamaskAddress = SmartRepository.getMyAddress();
     },
     async logout() {
       localStorage.removeItem('token');
@@ -184,6 +184,8 @@ export default defineComponent({
     async connectMetamask() {
       this.loading = true;
       await SmartRepository.connectMetamask();
+
+      this.metamaskAddress = SmartRepository.getMyAddress();
       this.loading = false;
     },
     async confirmAddress() {
@@ -197,7 +199,7 @@ export default defineComponent({
           message: "Successfully validated!",
           color: 'green'
         });
-        await this.fetch();
+        location.reload();
       } catch (e) {
         this.$q.notify({
           message: "Validation failed",
@@ -210,7 +212,7 @@ export default defineComponent({
     async giveFullControl() {
       this.loading = true;
       await SmartRepository.transaction(Globals.control, "validatePermission", []);
-      const response = await ApiRepository.getPermission(this.fullAddress);
+      const response = await ApiRepository.getPermission(localStorage.getItem('token'), this.fullAddress);
       this.modelControl = !(response.data.permission);
       this.loading = false;
 

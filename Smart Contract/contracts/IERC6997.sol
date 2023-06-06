@@ -1,26 +1,28 @@
 // SPDX-License-Identifier: unlicensed
 pragma solidity 0.8.17;
 
-interface IERC20V {
+interface IERC6997 {
 
     struct TransferValidation {
         // The address of the owner.
         address from;
         // The address of the receiver.
         address to;
-        // The token amount.
-        uint256 amount;
+        // The token Id.
+        uint256 tokenId;
         // Whether is a valid transfer.
         bool valid;
     }
 
-    struct ApproveValidation {
+    struct ApprovalValidation {
         // The address of the owner.
         address owner;
-        // The spender address.
-        address spender;
-        // The token amount approved.
-        uint256 amount;
+        // The approved address.
+        address approve;
+        // The token Id.
+        uint256 tokenId;
+        // Wether is a total approvement.
+        bool approveAll;
         // Whether is a valid approve.
         bool valid;
     }
@@ -28,12 +30,12 @@ interface IERC20V {
     /**
      * @dev Emitted when a new transfer validation has been requested.
      */
-    event ValidateTransfer(address indexed from, address indexed to, uint256 amount, uint256 indexed transferValidationId);
+    event ValidateTransfer(address indexed from, address to, uint256 indexed tokenId, uint256 indexed transferValidationId);
 
     /**
-    * @dev Emitted when a new approve validation has been requested.
+    * @dev Emitted when a new approval validation has been requested.
     */
-    event ValidateApprove(address indexed owner, address indexed spender, uint256 amount, uint256 indexed approveValidationId);
+    event ValidateApproval(address indexed owner, address approve, uint256 tokenId, bool indexed approveAll, uint256 indexed approvalValidationId);
 
     /**
      * @dev Returns true if this contract is a validator ERC721.
@@ -47,10 +49,10 @@ interface IERC20V {
     function transferValidation(uint256 transferId) external view returns (TransferValidation memory);
 
     /**
-    * @dev Returns the approve validation struct using the approve ID.
+    * @dev Returns the approval validation struct using the approval ID.
     *
     */
-    function approveValidation(uint256 approveId) external view returns (ApproveValidation memory);
+    function approvalValidation(uint256 approvalId) external view returns (ApprovalValidation memory);
 
     /**
      * @dev Return the total amount of transfer validations created.
@@ -62,5 +64,5 @@ interface IERC20V {
      * @dev Return the total amount of transfer validations created.
      *
      */
-    function totalApproveValidations() external view returns (uint256);
+    function totalApprovalValidations() external view returns (uint256);
 }

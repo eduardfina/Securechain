@@ -18,7 +18,6 @@ const configuration = {
         address: process.env.CONTROL_ADDRESS,
         abi: JSON.parse(process.env.CONTROL_ABI)
     },
-    network: {},
     networks: {
         localhost: {
             name: 'localhost',
@@ -39,7 +38,7 @@ const configuration = {
     codeLocation: 0,
     codeLanguage: 0,
     subscriptionId: 174,
-    oracleAuth: process.env.ORACLE_AUTH
+    secrets: process.env.SECRETS
 }
 // Export configuration
 module.exports = configuration
@@ -52,10 +51,22 @@ function verifyEnvironmentVars() {
         'API_SERVICE_PORT',
         'DB_HOST',
         'NETWORK_NAME',
+        // Contract ABIs
+        'XNFTV_CONTRACT_ABI',
+        'XTOKENV_CONTRACT_ABI',
+        'ERC20_ABI',
+        'ERC721_ABI',
         // QUICKNODE
+        'QUICKNODE_GRAPHQL_ENDPOINT',
         'QUICKNODE_API_KEY',
+        // Control
+        'CONTROL_ADDRESS',
+        'CONTROL_ABI',
         // Ethereum: Caller Wallet
+        'ETH_CALLER_WALLET_ADDRESS',
         'ETH_CALLER_WALLET_PRIVATE_KEY',
+        // DON Secrets
+        'SECRETS'
     ]
 
     requiredEnvVars.forEach((key) => {

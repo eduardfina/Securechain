@@ -9,7 +9,7 @@ export default {
     try {
         provider = new ethers.BrowserProvider(window.ethereum, 'sepolia');
         signer = await provider.getSigner();
-        provider.send("eth_requestAccounts", []).then((acc) => {
+        await provider.send("eth_requestAccounts", []).then((acc) => {
           accounts = acc;
         }).catch((e) => {
           console.log(e);
@@ -23,8 +23,10 @@ export default {
   async signMessage(msg){
     return await signer.signMessage(msg);
   },
-  async getMyAddress() {
-    return await signer.getAddress();
+  getMyAddress() {
+    if(accounts)
+      return ethers.getAddress(accounts[0])
+    return "";
   },
   parseEther(value){
     return ethers.parseEther(value.toString());
@@ -53,7 +55,7 @@ export default {
       args.push(overrides)
     }
     let contract = new ethers.Contract(contractData.address, contractData.abi, signer);
-    console.log(contractData);
+
     let tx = await contract[functionName].apply(null, args);
     return await tx.wait();
   },

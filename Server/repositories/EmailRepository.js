@@ -30,7 +30,6 @@ exports.sendEmail = async function (to, subject, html) {
        let transporter = nodemailer.createTransport(_options);
        await transporter.sendMail(_message, function (error, info) {
            if (error) { return console.log(error); }
-           console.log("Message sent: %s", info.response);
            return "Message sent: " + info.response;
        });
    } catch (e) {
@@ -38,7 +37,7 @@ exports.sendEmail = async function (to, subject, html) {
    }
 }
 
-exports.sendNFTEmail = async function(to, proc, token, type) {
+exports.sendNFTEmail = async function(to, proc, token, type, validationType, contract) {
     try {
         let v = await Validations.findOne({"process": proc, "token": token});
         let subject;
@@ -47,8 +46,10 @@ exports.sendNFTEmail = async function(to, proc, token, type) {
         if(type === "ERC721") {
             subject = "Validate NFT Transfer";
 
-            let tokenURI = await SmartRepository.call(Config.nftContractData, "tokenURI", [v.amount]);
+            let tokenURI = await SmartRepository.call({address: contract, abi: Config.xNFTVContractAbi}, "tokenURI", [v.token]);
             let metadata;
+
+            tokenURI = ipfsToHttps(tokenURI);
 
             let settings = { method: "Get" };
             while(metadata === undefined) {
@@ -65,11 +66,11 @@ exports.sendNFTEmail = async function(to, proc, token, type) {
 
             const data = await fs.readFile("./html/NFTvalidation.html");
 
-            const urlValidation = "http://" + process.env.IP_CLIENT + "#/validate?token=" + token + "&process=" + proc;
+            const urlValidation = "http://localhost:8080/#/Validation";
             html = data.toString();
 
             html = html.replaceAll("{{nft_name}}", metadata.name);
-            html = html.replaceAll("{{to}}", v.to);
+            html = html.replaceAll("{{nft_type}}", validationType);
             html = html.replaceAll("{{nft_image}}", metadata.image.replaceAll("ipfs://", "https://ipfs.io/ipfs/"));
             html = html.replaceAll("{{url_validation}}", urlValidation);
         }
@@ -110,4 +111,14 @@ exports.getNFTEvents = async function () {
         console.error(e)
         return e
     }
+}
+
+function ipfsToHttps (ipfs) {
+    if(ipfs.includes("ipfs://")) {
+        const strFile = ipfs.split("//");
+
+        return "https://ipfs.io/ipfs/" + strFile[1];
+    }
+
+    return "";
 }

@@ -69,8 +69,7 @@ function verifyEnvironmentVars() {
         // QUICKNODE
         'QUICKNODE_API_KEY',
         // Ethereum: Caller Wallet
-        'ETH_CALLER_WALLET_ADDRESS',
-        'ETH_CALLER_WALLET_PRIVATE_KEY',
+        'ETH_CALLER_WALLET_PRIVATE_KEY'
     ]
 
     requiredEnvVars.forEach((key) => {

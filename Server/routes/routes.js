@@ -34,7 +34,6 @@ module.exports = function (app) {
     api.get('/getUserAssets', ContractController.getUserAssets);
     api.post('/createContract', ContractController.createContract);
     api.get('/isValid', ValidationController.isValid);
-    api.post('/estimateCostAcceptValidation', ValidationController.estimateCostAcceptValidation);
     api.post('/generate', AuthController.generateOracleToken);
     api.get('/getContractFromOriginalAddress', ContractController.getContractFromOriginalAddress);
     api.get('/getPermission', PermissionController.getPermission);

@@ -9,8 +9,8 @@ var web3 = new Web3(Config.networks.sepolia.wss);
 const deploy_hash = web3.utils.sha3('Deploy(address,address,string)');
 const validate_downgrade_hash = web3.utils.sha3('ValidateDowngrade(address,uint256,uint256)');
 const validate_transfer_hash = web3.utils.sha3('ValidateTransfer(address,address,uint256,uint256)');
-const validate_approveERC20_hash = web3.utils.sha3('ValidateApprove(address,address,uint256,uint256)');
-const validate_approveERC721_hash = web3.utils.sha3('ValidateApprove(address,address,uint256,bool,uint256)');
+const validate_approveERC20_hash = web3.utils.sha3('ValidateApproval(address,address,uint256,uint256)');
+const validate_approvalERC6997_hash = web3.utils.sha3('ValidateApproval(address,address,uint256,bool,uint256)');
 const validated_hash = web3.utils.sha3('Validated(address,uint256,string)');
 const transfer_hash = web3.utils.sha3('Transfer(address,address,uint256)');
 
@@ -76,7 +76,7 @@ var main = async function main() {
             }
         });
 
-    const subscriptionApprove = web3.eth.subscribe('logs', {topics: [[validate_approveERC20_hash, validate_approveERC721_hash]]}, (error, event) => {
+    const subscriptionApprove = web3.eth.subscribe('logs', {topics: [[validate_approveERC20_hash, validate_approvalERC6997_hash]]}, (error, event) => {
     }).on("connected", function (subscriptionId) {
         console.log('SubID: ', subscriptionId);
     })

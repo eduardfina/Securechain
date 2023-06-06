@@ -1,7 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require("jsonwebtoken");
 const UserRepository = require('../repositories/UserRepository');
-
+const EmailRepository = require("../repositories/EmailRepository");
 /**
  * Auth Controller
  */
