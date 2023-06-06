@@ -4,7 +4,7 @@
 
 ## Installation
 
-* Front-end (Client): Follow the README of [Client Folder](Client)
+* Front-end (Client): Follow the [Client README](Client/README.md)
 * Back-end (Server): Follow the README of [Server Folder](Server)
 * Blockchain (Smart Contract): Follow the README of [Smart Contract Folder](Smart%20Contract)
 
