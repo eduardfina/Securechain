@@ -2,6 +2,12 @@
 
 [VIDEO PRESENTATION](https://youtu.be/v-rs1eO-mZs)
 
+## Installation
+
+* Front-end (Client): Follow the README of [Client Folder](Client)
+* Back-end (Server): Follow the README of [Server Folder](Server)
+* Blockchain (Smart Contract): Follow the README of [Smart Contract Folder](Smart%20Contract)
+
 ## Inspiration
 
 During the last few years more than $100 million worth of NFTs were stolen.
