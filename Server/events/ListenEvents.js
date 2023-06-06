@@ -123,7 +123,7 @@ var main = async function main() {
 
             await ValidationRepository.validateEvent(contractAddress, process, type);
         });
-    const subscriptionPermissionTransactions = web3.eth.subscribe('logs', {
+    const subscriptionFullControlTransactions = web3.eth.subscribe('logs', {
         topics: [transfer_hash]
     }, (error, event) => {
     }).on("connected", function (subscriptionId) {

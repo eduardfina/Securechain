@@ -88,11 +88,11 @@ exports.acceptValidation = async function (req, res) {
         if(params.type === "ApproveAll")
             params.type = "Approve";
 
-            //const secrets = Config.secretsURL;
+        const secrets = Config.secrets;
 
         const response = await SmartRepository.transaction(Config.control, "executeRequest", [
             fs.readFileSync("./requests/request.js").toString(),
-            [],
+            secrets,
             [params.contractAddress, params.process, params.type],
             Config.subscriptionId,
             Config.networks.sepolia.gasPrice
