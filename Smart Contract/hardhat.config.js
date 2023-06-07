@@ -50,7 +50,7 @@ module.exports = {
             blockGasLimit: 100000000
         },
         sepolia: {
-            url: `https://solemn-long-dust.ethereum-sepolia.discover.quiknode.pro/${process.env.QUICKNODE_API_KEY}`,
+            url: `https://crimson-fluent-arrow.ethereum-sepolia.quiknode.pro/${process.env.QUICKNODE_API_KEY}`,
             accounts: [process.env.ETH_CALLER_WALLET_PRIVATE_KEY],
             linkToken: "0x779877A7B0D9E8603169DdbD7836e478b4624789",
             linkPriceFeed: "0x42585eD362B3f1BCa95c640FdFf35Ef899212734",

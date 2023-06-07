@@ -1,5 +1,5 @@
-const {ethers} = require("hardhat");
-const {networks} = require("../hardhat.config");
+const { ethers } = require("hardhat");
+const { networks } = require("../hardhat.config");
 
 async function main() {
     const [deployer] = await ethers.getSigners();
@@ -9,7 +9,7 @@ async function main() {
     console.log("Account balance:", (await deployer.getBalance()).toString());
 
     const Control = await ethers.getContractFactory("Control");
-    const control = await Control.deploy(networks["sepolia"]["functionsOracleProxy"], "0x5Ce8C624286e91b44e5278FA446c36C2b017bfe8");
+    const control = await Control.deploy(networks["sepolia"]["functionsOracleProxy"], process.env.ETH_VALIDATOR_ADDRESS);
 
     console.log("Control address: ", control.address);
 
@@ -45,13 +45,13 @@ async function main() {
 
     const fundTx = await linkToken.transferAndCall(
         networks["sepolia"]["functionsBillingRegistryProxy"],
-        ethers.utils.parseUnits("10"),
+        ethers.utils.parseUnits("1"),
         ethers.utils.defaultAbiCoder.encode(["uint64"], [subscriptionId])
     );
 
     console.log("Funding subscription, waiting 2 blocks...");
     await fundTx.wait(2);
-    console.log("Subscription " + subscriptionId + "funded with " + ethers.utils.formatEther("10000000000000000000") + " LINK");
+    console.log("Subscription " + subscriptionId + "funded with " + ethers.utils.formatEther("1000000000000000000") + " LINK");
 
     const addTx = await registry.addConsumer(subscriptionId, control.address);
     console.log("Adding Consumer, waiting 2 blocks...");

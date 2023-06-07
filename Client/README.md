@@ -1,41 +1,18 @@
-# Security-Blockchain-Assets-Front-End (quasar-project)
+# Front-end Installation
 
-A Quasar Project
+The app will be running in localhost.
 
-## Install the dependencies
-```bash
-yarn
-# or
+Make sure you have Metamask installed and connected to the Sepolia Testnet.
+
+## 1- Install the dependencies
+
+Using npm install the dependencies:
+
+```
 npm install
 ```
 
-### Start the app in development mode (hot-code reloading, error reporting, etc.)
-```bash
-quasar dev
+## 2- Start the app in development mode (hot-code reloading, error reporting, etc.)
 ```
-
-
-### Lint the files
-```bash
-yarn lint
-# or
-npm run lint
+npm run dev
 ```
-
-
-### Format the files
-```bash
-yarn format
-# or
-npm run format
-```
-
-
-
-### Build the app for production
-```bash
-quasar build
-```
-
-### Customize the configuration
-See [Configuring quasar.config.js](https://v2.quasar.dev/quasar-cli-webpack/quasar-config-js).

@@ -9,8 +9,7 @@
   "scripts": {
     "test": "npx hardhat test src/test/test.js --network localhost",
     "start": "node app.js",
-    "start-nodemon": "nodemon node app.js",
-    "cron": "node events/ValidationEvents.js"
+    "start-nodemon": "nodemon node app.js"
   },
   "repository": {
     "type": "git",

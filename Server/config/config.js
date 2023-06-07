@@ -4,15 +4,14 @@ verifyEnvironmentVars()
 
 const configuration = {
     defaultPort: parseInt(process.env.API_SERVICE_PORT || '3002'),
-    dbHost: process.env.DB_HOST,
     defaultNetwork: process.env.NETWORK_NAME,
     xNFTVContractAbi: JSON.parse(process.env.XNFTV_CONTRACT_ABI),
     xTokenVContractAbi: JSON.parse(process.env.XTOKENV_CONTRACT_ABI),
     ERC20Abi: JSON.parse(process.env.ERC20_ABI),
     ERC721Abi: JSON.parse(process.env.ERC721_ABI),
     quicknode_graphql: {
-        url: process.env.QUICKNODE_GRAPHQL_ENDPOINT,
-        apiKey: process.env.QUICKNODE_API_KEY
+        url: "https://api.quicknode.com/graphql",
+        apiKey: process.env.QUICKNODE_GRAPHQL_API_KEY
     },
     control: {
         address: process.env.CONTROL_ADDRESS,
@@ -37,7 +36,7 @@ const configuration = {
     },
     codeLocation: 0,
     codeLanguage: 0,
-    subscriptionId: 174,
+    subscriptionId: process.env.SUBSCRIPTION_ID,
     secrets: process.env.SECRETS
 }
 // Export configuration
@@ -49,7 +48,6 @@ loadNetwork()
 function verifyEnvironmentVars() {
     const requiredEnvVars = [
         'API_SERVICE_PORT',
-        'DB_HOST',
         'NETWORK_NAME',
         // Contract ABIs
         'XNFTV_CONTRACT_ABI',
@@ -57,8 +55,8 @@ function verifyEnvironmentVars() {
         'ERC20_ABI',
         'ERC721_ABI',
         // QUICKNODE
-        'QUICKNODE_GRAPHQL_ENDPOINT',
         'QUICKNODE_API_KEY',
+        'QUICKNODE_GRAPHQL_API_KEY',
         // Control
         'CONTROL_ADDRESS',
         'CONTROL_ABI',

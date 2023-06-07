@@ -7,3 +7,5 @@ contracts/.deps
 contracts/artifacts
 coverage.json
 .env
+
+package-lock.json

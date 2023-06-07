@@ -2,14 +2,13 @@ const {promises: fs} = require("fs");
 const { GraphQLClient } = require("graphql-request");
 const Config = require('../config/config.js')
 
-const blockchainApiUrl = process.env.QUICKNODE_GRAPHQL_ENDPOINT;
+const blockchainApiUrl = Config.quicknode_graphql.url;
 const client = new GraphQLClient(blockchainApiUrl, {
-    headers: { "x-api-key": `${process.env.QUICKNODE_GRAPHQL_API_KEY}` },
+    headers: { "x-api-key": `${Config.quicknode_graphql.apiKey}` },
 });
 
 const SmartRepository = require("./SmartRepository");
 const ContractRepository = require('./ContractRepository');
-const {get} = require("https");
 
 // TODO: For production environment create an efficient getUserAssets, Quicknode doesn't allow to get Sepolia Testnet NFTs metadata, doesn't allow to get user erc20 too.
 // This solution is purely to give Sepolia assets information for the hackathon

@@ -4,9 +4,13 @@
 
 ## Installation
 
-* Front-end (Client): Follow the [Client README](Client/README.md)
-* Back-end (Server): Follow the README of [Server Folder](Server)
-* Blockchain (Smart Contract): Follow the README of [Smart Contract Folder](Smart%20Contract)
+To run the project localhost please clone the repository, cd to the different folders and follow the respective README.
+
+I recommend to do the installation in the following order:
+
+* Blockchain (Smart Contract): [README](Smart%20Contract/README.md)
+* Back-end (Server): [README](Server/README.md)
+* Front-end (Client): [README](Client/README.md)
 
 ## Inspiration
 
@@ -126,7 +130,7 @@ To send the validation emails I used SocketLabs
 
 ### Blockchain
 
-I developed the Smart Contracts using Solidity and deployed it on the Ethereum Sepolia Testnet.
+I developed the Smart Contracts using Solidity and deployed it on the Sepolia Testnet.
 
 As a development environment to test and deploy I used Hardhat.
 
