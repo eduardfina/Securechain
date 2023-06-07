@@ -7,5 +7,3 @@ Smart Contract/contracts/.deps
 Smart Contract/contracts/artifacts
 coverage.json
 .env
-
-package-lock.json
